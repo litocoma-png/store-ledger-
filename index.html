@@ -8,7 +8,7 @@
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
   <link rel="apple-touch-icon" href="icon-180.png">
-  <title>Store Assistant  — Offline</title>
+  <title>StoreLedger — Offline</title>
   <style>
     :root{--ink:#17231f;--muted:#65736d;--line:#dfe7e2;--paper:#f4f7f4;--card:#fff;--brand:#174c3c;--brand2:#26785c;--brand-soft:#e7f3ed;--warn:#9d5c08;--warn-bg:#fff4df;--danger:#a93232;--danger-bg:#fff0ef;--good:#17613f;--shadow:0 8px 24px rgba(19,57,42,.06);--radius:16px}
     *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.45}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed} .shell{max-width:1400px;margin:0 auto;padding:20px}
@@ -42,7 +42,7 @@
     </nav>
     <main id="app-view" tabindex="-1">
       <section class="view active" data-view="dashboard">
-        <div class="page-head"><div><h2>Dashboard</h2><p>Your store at a glance.</p></div><div class="actions"><button class="btn" data-action="capture-to-sell">▦ Capture to sell</button><button class="btn primary" data-go="sale">＋ New sale</button></div></div>
+        <div class="page-head"><div><h2>Dashboard</h2><p>Your store at a glance.</p></div><div class="actions"><button class="btn" data-action="capture-to-sell">📷 Capture product to sell</button><button class="btn primary" data-go="sale">＋ New sale</button></div></div>
         <div class="grid stats" id="dash-stats"></div>
         <div class="grid two-col">
           <div class="panel"><div class="panel-head"><div><h3>Low-stock alerts</h3><p class="sub">Products at or below their alert level.</p></div><button class="btn small" data-go="products">View products</button></div><div id="dash-low"></div></div>
@@ -141,5 +141,7 @@
 <div class="modal-backdrop" id="quick-customer-modal" role="dialog" aria-modal="true" aria-labelledby="quick-customer-title"><div class="modal"><div class="modal-head"><h3 id="quick-customer-title">Add customer to sale</h3><button class="close" id="close-quick-customer" type="button" aria-label="Close">×</button></div><form id="quick-customer-form"><div class="form-grid"><div class="field full"><label for="quick-customer-name">Customer name *</label><input id="quick-customer-name" maxlength="120" required></div><div class="field"><label for="quick-customer-phone">Phone / contact</label><input id="quick-customer-phone" maxlength="60"></div><div class="field"><label for="quick-customer-opening">Old unsettled balance (₱)</label><input id="quick-customer-opening" type="number" min="0" step="0.01" value="0"></div></div><div class="form-actions"><button class="btn primary" type="submit">Save and select customer</button></div></form></div></div><div class="modal-backdrop" id="scanner-modal" role="dialog" aria-modal="true" aria-label="Barcode scanner"><div class="modal"><div class="modal-head"><h3>Scan barcode</h3><button class="close" id="close-scanner" type="button" aria-label="Close scanner">×</button></div><div class="video-wrap"><video id="scanner-video" autoplay muted playsinline></video></div><div id="scanner-message" class="scan-message">Point the camera at a barcode and hold it steady.</div><div class="form-actions"><button class="btn" type="button" id="stop-scanner">Close scanner</button></div></div></div>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
 <script src="app.js" defer></script>
+<input class="hidden" id="sell-photo-input" type="file" accept="image/*" capture="environment" aria-label="Capture product photo">
+<div class="modal-backdrop" id="photo-match-modal" role="dialog" aria-modal="true" aria-labelledby="photo-match-title"><div class="modal"><div class="modal-head"><h3 id="photo-match-title">Match photo to a product</h3><button class="close" id="close-photo-match" type="button" aria-label="Close">×</button></div><div class="photo-preview"><img id="sell-photo-preview" alt="Captured product photo"><span>Captured photo</span></div><p class="sub" id="photo-match-note">Choose the matching product from your current stock.</p><div id="photo-match-list"></div></div></div>
 </body>
 </html>
