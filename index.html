@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#12382d">
+  <meta name="description" content="Private, offline inventory, sales, barcode and customer credit tracker.">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png" type="image/png" sizes="192x192">
+  <link rel="apple-touch-icon" href="icon-180.png">
+  <title>StoreLedger — Offline</title>
+  <style>
+    :root{--ink:#17231f;--muted:#65736d;--line:#dfe7e2;--paper:#f4f7f4;--card:#fff;--brand:#174c3c;--brand2:#26785c;--brand-soft:#e7f3ed;--warn:#9d5c08;--warn-bg:#fff4df;--danger:#a93232;--danger-bg:#fff0ef;--good:#17613f;--shadow:0 8px 24px rgba(19,57,42,.06);--radius:16px}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:var(--paper);color:var(--ink);font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.45}button,input,select,textarea{font:inherit}button{cursor:pointer}button:disabled{opacity:.45;cursor:not-allowed} .shell{max-width:1400px;margin:0 auto;padding:20px}
+    header{display:flex;justify-content:space-between;align-items:center;gap:16px;margin-bottom:18px}.brand{display:flex;align-items:center;gap:12px}.brand-mark{width:46px;height:46px;border-radius:14px;background:#fff;color:var(--brand);overflow:hidden;display:grid;place-items:center;font-weight:850;font-size:21px;box-shadow:var(--shadow)}.brand-mark img{width:100%;height:100%;object-fit:contain;border-radius:inherit}h1{font-size:22px;margin:0;letter-spacing:-.5px}header p{margin:3px 0 0;color:var(--muted);font-size:13px}.status{display:flex;align-items:center;gap:7px;background:#e9f6ee;border:1px solid #cee8d7;color:#245b3e;padding:7px 11px;border-radius:999px;font-size:12px;font-weight:750;white-space:nowrap}.status-dot{width:7px;height:7px;background:#24965e;border-radius:50%}
+    .layout{display:grid;grid-template-columns:218px minmax(0,1fr);gap:20px;align-items:start}.sidebar{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:10px;box-shadow:var(--shadow);position:sticky;top:14px}.nav-btn{width:100%;border:0;background:transparent;color:#52615a;padding:12px 13px;border-radius:11px;text-align:left;display:flex;align-items:center;gap:11px;margin:2px 0;font-weight:650;font-size:14px}.nav-btn .ico{width:24px;text-align:center;font-size:17px}.nav-btn.active{background:var(--brand-soft);color:var(--brand)}.nav-btn:hover:not(.active){background:#f4f7f5}.sidebar-foot{border-top:1px solid var(--line);margin-top:10px;padding:13px 8px 5px;color:var(--muted);font-size:11px}
+    main{min-width:0}.view{display:none}.view.active{display:block}.page-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin:2px 0 18px}.page-head h2{font-size:25px;line-height:1.2;letter-spacing:-.7px;margin:0}.page-head p{margin:5px 0 0;color:var(--muted);font-size:13px}.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+    .btn{border:1px solid var(--line);background:#fff;color:var(--ink);padding:9px 13px;border-radius:10px;font-weight:700;font-size:13px;display:inline-flex;align-items:center;justify-content:center;gap:7px;white-space:nowrap}.btn:hover{border-color:#a8c4b5;background:#f9fcfa}.btn.primary{background:var(--brand);border-color:var(--brand);color:white}.btn.primary:hover{background:var(--brand2)}.btn.soft{background:var(--brand-soft);border-color:#d4e9dd;color:var(--brand)}.btn.danger{background:var(--danger-bg);border-color:#f2d0ce;color:var(--danger)}.btn.small{padding:6px 9px;font-size:12px;border-radius:8px}.btn.block{width:100%}
+    .grid{display:grid;gap:14px}.stats{grid-template-columns:repeat(4,minmax(0,1fr));margin-bottom:16px}.stat{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:17px;min-width:0}.stat-label{color:var(--muted);font-size:12px;font-weight:700}.stat-value{font-size:24px;font-weight:800;letter-spacing:-.6px;margin-top:8px;overflow-wrap:anywhere}.stat-note{font-size:12px;color:var(--muted);margin-top:4px}.stat-icon{float:right;background:var(--brand-soft);color:var(--brand);height:32px;width:32px;border-radius:10px;display:grid;place-items:center}
+    .two-col{grid-template-columns:1.2fr .8fr}.panel{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);min-width:0}.panel-head{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}.panel h3{font-size:16px;margin:0;letter-spacing:-.2px}.sub{color:var(--muted);font-size:12px;margin:4px 0 0}.form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.field{min-width:0;display:flex;flex-direction:column;gap:6px}.field.full{grid-column:1/-1}.field label{font-size:12px;color:#52615a;font-weight:750}.field input,.field select,.field textarea,.toolbar input,.toolbar select{width:100%;min-width:0;border:1px solid #d5e0d9;border-radius:9px;padding:10px 11px;background:white;color:var(--ink);outline:none}.field input:focus,.field select:focus,.field textarea:focus,.toolbar input:focus,.toolbar select:focus{border-color:#559d7d;box-shadow:0 0 0 3px rgba(38,120,92,.11)}.field input[type=file]{padding:8px;font-size:12px}.field small{color:var(--muted);font-size:11px}.form-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:14px;flex-wrap:wrap}.toolbar{display:flex;gap:9px;margin-bottom:13px;align-items:center;flex-wrap:wrap}.toolbar .grow{flex:1;min-width:190px}.toolbar input,.toolbar select{padding:9px 10px;font-size:13px}.table-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}table{border-collapse:collapse;width:100%;font-size:13px;white-space:nowrap}th{background:#f5f8f6;color:#627068;text-align:left;font-size:11px;text-transform:uppercase;letter-spacing:.45px;padding:11px 12px;font-weight:800}td{padding:11px 12px;border-top:1px solid #edf1ee;vertical-align:middle}tbody tr:hover{background:#fbfdfb}.product-cell{display:flex;align-items:center;gap:10px;min-width:175px}.thumb{width:54px;height:54px;flex:0 0 54px;border-radius:10px;object-fit:cover;background:#edf4ef;border:1px solid #e0e9e3;display:grid;place-items:center;color:var(--brand);font-weight:800}.prod-name{font-weight:750;max-width:230px;overflow:hidden;text-overflow:ellipsis}.muted{color:var(--muted);font-size:12px}.pill{display:inline-flex;border-radius:999px;padding:4px 8px;font-weight:750;font-size:11px}.pill.good{background:#e5f6eb;color:#24603f}.pill.low{background:var(--warn-bg);color:var(--warn)}.pill.bad{background:var(--danger-bg);color:var(--danger)}.pill.neutral{background:#eef2ef;color:#58665e}.empty{padding:28px 15px;text-align:center;color:var(--muted)}.empty b{display:block;color:var(--ink);margin-bottom:4px}.empty-icon{font-size:25px;margin-bottom:7px}
+    .callout{padding:12px 14px;border-radius:11px;border:1px solid #f0ddb6;background:#fff9ec;color:#795113;font-size:12px;margin-bottom:13px}.callout.info{border-color:#d4e8dc;background:#f0f8f3;color:#305a43}.sale-layout{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:14px;align-items:start}.cart-line{display:grid;grid-template-columns:minmax(0,1fr) 85px 85px 28px;gap:8px;align-items:center;padding:10px 0;border-top:1px solid #edf1ee}.cart-line:first-child{border-top:0}.cart-name{font-weight:750;font-size:13px;white-space:normal}.cart-line input{width:100%;min-width:0;padding:7px;border:1px solid #d8e1db;border-radius:8px}.cart-remove{border:0;background:transparent;color:var(--danger);font-size:18px}.cart-total{display:flex;justify-content:space-between;gap:10px;padding:12px 0;border-top:1px solid var(--line);font-weight:800}.big-total{font-size:25px;letter-spacing:-.6px}.photo-preview{display:flex;align-items:center;gap:12px;margin-top:10px}.photo-preview img{height:58px;width:58px;object-fit:cover;border-radius:11px;border:1px solid var(--line)}.photo-preview span{font-size:12px;color:var(--muted)}.hidden{display:none!important}.footnote{font-size:11px;color:var(--muted);margin-top:12px}.receipt{padding:24px;max-width:460px;margin:0 auto;background:white}.receipt h2,.receipt p{text-align:center;margin:4px}.receipt table{margin-top:18px}.receipt .amount{text-align:right;font-weight:800}.notice{padding:10px 12px;border-radius:10px;margin:0 0 12px;font-size:13px}.notice.success{background:#e7f6ec;color:#245a3c}.notice.error{background:#fff0ef;color:#97312e}.notice.info{background:#eaf3ff;color:#2d527f}.modal-backdrop{position:fixed;inset:0;background:rgba(14,30,23,.48);display:none;align-items:center;justify-content:center;padding:18px;z-index:20}.modal-backdrop.show{display:flex}.modal{width:min(540px,100%);max-height:90vh;overflow:auto;background:white;border-radius:18px;padding:20px;box-shadow:0 20px 80px #10271c44}.modal-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:15px}.modal-head h3{margin:0}.close{border:0;background:#f0f4f1;border-radius:8px;width:33px;height:33px;font-size:20px}.video-wrap{background:#101713;border-radius:12px;overflow:hidden;aspect-ratio:4/3;display:grid;place-items:center}.video-wrap video{display:block;width:100%;height:100%;object-fit:cover}.scan-message{font-size:12px;color:var(--muted);margin-top:9px}.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#172d23;color:white;border-radius:11px;padding:11px 16px;font-size:13px;box-shadow:0 8px 30px #0002;z-index:50;max-width:90vw;display:none}.toast.show{display:block}.backup-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.report-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.section-label{margin:20px 0 10px;font-size:12px;text-transform:uppercase;letter-spacing:.6px;color:#65736d;font-weight:800}
+    @media(max-width:980px){.layout{grid-template-columns:1fr}.sidebar{position:static;display:flex;overflow-x:auto;gap:4px;padding:7px}.nav-btn{width:auto;white-space:nowrap;margin:0;padding:10px 12px}.nav-btn .ico{width:auto}.sidebar-foot{display:none}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.two-col{grid-template-columns:1fr}.sale-layout{grid-template-columns:1fr}}
+    @media(max-width:560px){.shell{padding:12px}.brand-mark{width:40px;height:40px}.brand h1{font-size:19px}.brand p{font-size:11px}.status{font-size:10px;padding:6px 8px}.page-head h2{font-size:22px}.page-head{align-items:flex-start}.page-head .actions{max-width:48%;justify-content:flex-end}.btn{padding:9px 10px}.panel{padding:14px}.stat{padding:13px}.stat-value{font-size:20px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.report-grid,.backup-grid{grid-template-columns:1fr}.cart-line{grid-template-columns:minmax(0,1fr) 62px 75px 24px;gap:5px}.cart-line input{padding:6px 4px}.table-wrap table{font-size:12px}th,td{padding:9px}.nav-btn{font-size:12px}.nav-btn .ico{display:none}}
+    @media print{body{background:#fff}.shell,header,.sidebar,.page-head,.no-print{display:none!important}.print-area{display:block!important}}
+  </style>
+</head>
+<body>
+<div class="shell">
+  <header>
+    <div class="brand"><div class="brand-mark"><img src="logo-header.png" alt="StoreLedger logo"></div><div><h1>StoreLedger</h1><p>Inventory · Sales · Customer Credit</p></div></div>
+    <div class="status"><span class="status-dot"></span> OFFLINE-READY</div>
+  </header>
+  <div class="layout">
+    <nav class="sidebar" aria-label="Main navigation">
+      <button type="button" class="nav-btn active" data-page="dashboard" aria-current="page" aria-controls="app-view"><span class="ico">▦</span>Dashboard</button>
+      <button type="button" class="nav-btn" data-page="products" aria-controls="app-view"><span class="ico">▤</span>Products & Stock</button>
+      <button type="button" class="nav-btn" data-page="sale" aria-controls="app-view"><span class="ico">＋</span>New Sale</button>
+      <button type="button" class="nav-btn" data-page="customers" aria-controls="app-view"><span class="ico">♙</span>Credit Accounts</button>
+      <button type="button" class="nav-btn" data-page="history" aria-controls="app-view"><span class="ico">↻</span>Sales History</button>
+      <button type="button" class="nav-btn" data-page="reports" aria-controls="app-view"><span class="ico">▥</span>Reports & Backup</button>
+      <div class="sidebar-foot">Saved on this device using IndexedDB. Export backups regularly.</div>
+    </nav>
+    <main id="app-view" tabindex="-1">
+      <section class="view active" data-view="dashboard">
+        <div class="page-head"><div><h2>Dashboard</h2><p>Your store at a glance.</p></div><div class="actions"><button class="btn" data-action="capture-to-sell">▦ Capture to sell</button><button class="btn primary" data-go="sale">＋ New sale</button></div></div>
+        <div class="grid stats" id="dash-stats"></div>
+        <div class="grid two-col">
+          <div class="panel"><div class="panel-head"><div><h3>Low-stock alerts</h3><p class="sub">Products at or below their alert level.</p></div><button class="btn small" data-go="products">View products</button></div><div id="dash-low"></div></div>
+          <div class="panel"><div class="panel-head"><div><h3>Recent sales</h3><p class="sub">Most recent transactions.</p></div><button class="btn small" data-go="history">View history</button></div><div id="dash-recent"></div></div>
+        </div>
+      </section>
+      <section class="view" data-view="products">
+        <div class="page-head"><div><h2>Products & Stock</h2><p>Manage product details, photos, prices and inventory quantities.</p></div><div class="actions"><button class="btn primary" id="new-product-btn">＋ Add product</button></div></div>
+        <div class="panel" id="product-editor"><div class="panel-head"><div><h3 id="product-form-title">Add a product</h3><p class="sub">Use the base stock unit for consistent inventory deductions.</p></div><button class="btn small" id="cancel-product-edit">Clear form</button></div>
+          <form id="product-form">
+            <input type="hidden" id="p-id">
+            <div class="form-grid">
+              <div class="field"><label for="p-name">Product name *</label><input id="p-name" required maxlength="120" placeholder="e.g. Portland cement 40 kg"></div>
+              <div class="field"><label for="p-code">Barcode / SKU</label><div style="display:flex;gap:7px"><input id="p-code" maxlength="80" placeholder="Scan or type code"><button type="button" class="btn" data-scan="product" title="Scan barcode">▦ Scan</button></div></div>
+              <div class="field"><label for="p-category">Category</label><input id="p-category" maxlength="80" placeholder="Hardware, grocery…"></div>
+              <div class="field"><label for="p-supplier">Supplier</label><input id="p-supplier" maxlength="100" placeholder="Supplier name"></div>
+              <div class="field"><label for="p-cost">Cost per stock unit (₱) *</label><input id="p-cost" type="number" min="0" step="0.01" required value="0"></div>
+              <div class="field"><label for="p-price">Selling price per stock unit (₱) *</label><input id="p-price" type="number" min="0" step="0.01" required value="0"></div>
+              <div class="field"><label for="p-stock">Current stock *</label><input id="p-stock" type="number" min="0" step="0.001" required value="0"></div>
+              <div class="field"><label for="p-low">Low-stock alert level</label><input id="p-low" type="number" min="0" step="0.001" value="5"></div>
+              <div class="field"><label for="p-unit">Stock unit *</label><select id="p-unit" required></select></div>
+              <div class="field"><label for="p-alt-unit">Optional selling unit</label><select id="p-alt-unit"></select><small>Example: sell by dozen while stock is counted by piece.</small></div>
+              <div class="field"><label for="p-alt-factor">Stock units in 1 optional unit</label><input id="p-alt-factor" type="number" min="0.001" step="0.001" value="12"><small>Example: 1 dozen = 12 pieces.</small></div>
+              <div class="field"><label for="p-alt-price">Price per optional unit (₱, optional)</label><input id="p-alt-price" type="number" min="0" step="0.01" placeholder="Blank = base price × factor"></div>
+              <div class="field full"><label for="p-photo">Product photo (optional)</label><input id="p-photo" class="hidden" type="file" accept="image/*" capture="environment"><button type="button" class="btn" id="capture-product-photo" aria-controls="p-photo">📷 Capture image</button><small>On a phone, opens the rear camera when available. You can also choose an image. A thumbnail appears here and in the product list after saving.</small><div class="photo-preview hidden" id="photo-preview"><img id="photo-preview-img" alt="Product preview"><span>Selected product photo</span></div></div>
+            </div>
+            <div class="form-actions"><button type="button" class="btn" id="reset-product">Reset</button><button type="submit" class="btn primary" id="save-product-btn">Save product</button></div>
+          </form>
+        </div>
+        <div class="panel"><div class="panel-head"><div><h3>Product list</h3><p class="sub" id="product-count">All inventory items.</p></div></div><div class="toolbar"><input class="grow" id="product-search" placeholder="Search product, barcode, category or supplier…"><select id="stock-filter"><option value="all">All stock</option><option value="low">Low stock only</option><option value="out">Out of stock</option></select><button class="btn" id="export-products-csv">Export CSV</button></div><div class="table-wrap" id="product-table"></div></div>
+      </section>
+      <section class="view" data-view="sale">
+        <div class="page-head"><div><h2>New Sale</h2><p>Scan a barcode or select products. One transaction can include multiple items.</p></div></div>
+        <div class="sale-layout">
+          <div class="panel">
+            <div class="panel-head"><div><h3>Add item to sale</h3><p class="sub">Stock decreases when you complete the transaction.</p></div></div>
+            <div class="form-grid">
+              <div class="field full"><label for="sale-barcode">Barcode / SKU scan</label><div style="display:flex;gap:7px"><input id="sale-barcode" placeholder="Scan or enter barcode, then press Enter"><button class="btn" type="button" data-scan="sale">▦ Scan</button></div></div>
+              <div class="field full"><label for="sale-product">Product *</label><select id="sale-product"></select></div>
+              <div class="field"><label for="sale-qty">Quantity *</label><input id="sale-qty" type="number" min="0.001" step="0.001" value="1"></div>
+              <div class="field"><label for="sale-unit">Sell as</label><select id="sale-unit"></select></div>
+              <div class="field"><label for="sale-unit-price">Price per selling unit (₱)</label><input id="sale-unit-price" type="number" min="0" step="0.01" value="0"></div>
+              <div class="field"><label>&nbsp;</label><button class="btn primary block" id="add-cart-item" type="button">＋ Add to transaction</button></div>
+            </div>
+            <div class="footnote">Selling in a different unit uses the conversion factor saved on the product. Check it before selling if you use mixed units.</div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><div><h3>Current transaction</h3><p class="sub" id="cart-count">No items yet</p></div><button type="button" class="btn small" id="clear-cart">Clear</button></div>
+            <div id="cart-lines"><div class="empty"><div class="empty-icon">🧾</div><b>Your cart is empty</b>Add products to start a sale.</div></div>
+            <div class="cart-total"><span>Total</span><span class="big-total" id="cart-total">₱0.00</span></div>
+            <form id="checkout-form">
+              <div class="form-grid">
+                <div class="field"><label for="sale-type">Payment type</label><select id="sale-type"><option value="cash">Cash sale</option><option value="credit">Credit sale</option></select></div>
+                <div class="field"><label for="sale-customer">Customer</label><select id="sale-customer"><option value="">Walk-in / no customer</option></select><button type="button" class="btn small" id="sale-add-customer" style="margin-top:7px">＋ Add new customer</button></div>
+                <div class="field full"><label for="sale-paid">Amount received now (₱)</label><input id="sale-paid" type="number" min="0" step="0.01" value="0"></div>
+              </div>
+              <div class="notice info hidden" id="checkout-notice"></div>
+              <button type="submit" class="btn primary block" style="margin-top:12px">Complete sale</button>
+            </form>
+          </div>
+        </div>
+      </section>
+      <section class="view" data-view="customers">
+        <div class="page-head"><div><h2>Credit Accounts</h2><p>Customer details, opening unpaid balances, credit purchases and payments.</p></div></div>
+        <div class="grid two-col">
+          <div class="panel"><div class="panel-head"><div><h3 id="customer-form-title">Add a customer</h3><p class="sub">Enter any previous unsettled balance when creating an account.</p></div><button class="btn small" id="reset-customer">Clear form</button></div>
+            <form id="customer-form"><input type="hidden" id="c-id"><div class="form-grid">
+              <div class="field full"><label for="c-name">Customer name *</label><input id="c-name" required maxlength="120" placeholder="Full name or business name"></div>
+              <div class="field"><label for="c-phone">Phone / contact</label><input id="c-phone" maxlength="60" placeholder="Contact number"></div>
+              <div class="field"><label for="c-opening">Old unsettled balance (₱)</label><input id="c-opening" type="number" min="0" step="0.01" value="0"><small>Used only when creating a new account.</small></div>
+              <div class="field full"><label for="c-notes">Notes / address</label><textarea id="c-notes" rows="2" maxlength="300" placeholder="Optional notes"></textarea></div>
+            </div><div class="form-actions"><button class="btn primary" type="submit">Save customer</button></div></form>
+          </div>
+          <div class="panel"><div class="panel-head"><div><h3>Record a payment</h3><p class="sub">Payment reduces the old balance first, then the oldest unpaid sales.</p></div></div>
+            <form id="payment-form"><div class="form-grid"><div class="field full"><label for="payment-customer">Customer *</label><select id="payment-customer" required></select></div><div class="field full"><label for="payment-amount">Amount received (₱) *</label><input id="payment-amount" type="number" min="0.01" step="0.01" required placeholder="0.00"></div><div class="field full"><label for="payment-note">Reference / note</label><input id="payment-note" maxlength="120" placeholder="Cash, GCash reference, OR number…"></div></div><div class="form-actions"><button class="btn primary" type="submit">Record payment</button></div></form>
+          </div>
+        </div>
+        <div class="panel"><div class="panel-head"><div><h3>Customer balances</h3><p class="sub">Outstanding balances update when sales or payments are recorded.</p></div></div><div class="toolbar"><input class="grow" id="customer-search" placeholder="Search customer name or contact…"></div><div class="table-wrap" id="customer-table"></div><div class="section-label">Recent customer payments</div><div id="payment-history"></div><div class="section-label">Customer record history</div><div id="customer-record-history"><div class="empty">Choose “History” beside a customer to review their sales and payments.</div></div></div>
+      </section>
+      <section class="view" data-view="history">
+        <div class="page-head"><div><h2>Sales History</h2><p>Review cash and credit transactions, print receipts, and track amounts due.</p></div><div class="actions"><button class="btn" id="export-sales-csv">Export CSV</button></div></div>
+        <div class="panel"><div class="toolbar"><input class="grow" id="history-search" placeholder="Search receipt, customer or product…"><select id="history-type"><option value="all">All payment types</option><option value="cash">Cash</option><option value="credit">Credit</option></select></div><div class="table-wrap" id="sales-table"></div></div>
+      </section>
+      <section class="view" data-view="reports">
+        <div class="page-head"><div><h2>Reports & Backup</h2><p>Check store totals and export a copy of your offline data.</p></div></div>
+        <div class="grid stats" id="report-stats"></div>
+        <div class="grid two-col">
+          <div class="panel"><div class="panel-head"><div><h3>Sales summary</h3><p class="sub">Based on saved completed transactions.</p></div></div><div id="sales-summary"></div><div class="form-actions"><button class="btn" id="export-report-csv">Export sales CSV</button></div></div>
+          <div class="panel"><div class="panel-head"><div><h3>Backup & restore</h3><p class="sub">Backups include product photos, customers, sales and payments.</p></div></div><div class="callout info">Keep a backup outside this device. Clearing browser data or losing the device can erase local records.</div><div class="grid backup-grid"><button class="btn primary" id="backup-json">⬇ Download full backup</button><button class="btn" id="backup-products">Download products CSV</button><button class="btn" id="backup-sales">Download sales CSV</button><label class="btn" for="restore-file">⬆ Restore backup JSON</label><input class="hidden" id="restore-file" type="file" accept="application/json,.json"></div><p class="footnote">Restoring replaces the current local database. Export a backup first. Do not edit backup JSON unless you know the format.</p><div class="section-label">Delete app data</div><div class="callout">This permanently deletes all products, customers, sales and payments saved in this browser on this device.</div><button class="btn danger" id="delete-app-data" type="button">Delete all app data</button></div>
+        </div>
+        <div class="panel"><div class="panel-head"><div><h3>Offline storage details</h3><p class="sub">This copy of StoreLedger does not send your records to a server.</p></div></div><div class="grid report-grid"><div><div class="muted">Database</div><b>IndexedDB</b></div><div><div class="muted">Network use</div><b>None for core features</b></div><div><div class="muted">Backup</div><b>JSON / CSV files</b></div></div><div class="footnote">Camera barcode scanning is available only in browsers that support the Barcode Detection API and allow camera access. Manual barcode/SKU entry always remains available.</div></div>
+      </section>
+    </main>
+  </div>
+</div>
+<div class="modal-backdrop" id="quick-customer-modal" role="dialog" aria-modal="true" aria-labelledby="quick-customer-title"><div class="modal"><div class="modal-head"><h3 id="quick-customer-title">Add customer to sale</h3><button class="close" id="close-quick-customer" type="button" aria-label="Close">×</button></div><form id="quick-customer-form"><div class="form-grid"><div class="field full"><label for="quick-customer-name">Customer name *</label><input id="quick-customer-name" maxlength="120" required></div><div class="field"><label for="quick-customer-phone">Phone / contact</label><input id="quick-customer-phone" maxlength="60"></div><div class="field"><label for="quick-customer-opening">Old unsettled balance (₱)</label><input id="quick-customer-opening" type="number" min="0" step="0.01" value="0"></div></div><div class="form-actions"><button class="btn primary" type="submit">Save and select customer</button></div></form></div></div><div class="modal-backdrop" id="scanner-modal" role="dialog" aria-modal="true" aria-label="Barcode scanner"><div class="modal"><div class="modal-head"><h3>Scan barcode</h3><button class="close" id="close-scanner" type="button" aria-label="Close scanner">×</button></div><div class="video-wrap"><video id="scanner-video" autoplay muted playsinline></video></div><div id="scanner-message" class="scan-message">Point the camera at a barcode and hold it steady.</div><div class="form-actions"><button class="btn" type="button" id="stop-scanner">Close scanner</button></div></div></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script src="app.js" defer></script>
+</body>
+</html>
