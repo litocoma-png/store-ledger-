@@ -456,6 +456,53 @@ async function openScanner(target) {
     scannerFrame=requestAnimationFrame(scanFrame);
   } catch(err) { console.warn(err); stopScanner(); showToast('Could not open the camera. Check browser permission or enter the barcode manually.'); }
 }
+function imageColorSignature(source) {
+  return new Promise(resolve => {
+    const image = new Image();
+    image.onload = () => {
+      try {
+        const canvas = document.createElement('canvas'); canvas.width=12; canvas.height=12;
+        const ctx=canvas.getContext('2d',{willReadFrequently:true}); ctx.drawImage(image,0,0,12,12);
+        const pixels=ctx.getImageData(0,0,12,12).data, bins=new Array(12).fill(0);
+        for(let i=0;i<pixels.length;i+=4){const r=pixels[i],g=pixels[i+1],b=pixels[i+2];const hue=Math.atan2(Math.sqrt(3)*(g-b),2*r-g-b);const bin=Math.floor((hue+Math.PI)/(2*Math.PI)*12)%12;bins[bin]++;}
+        const total=bins.reduce((a,b)=>a+b,0)||1; resolve(bins.map(v=>v/total));
+      } catch { resolve(null); }
+    };
+    image.onerror=()=>resolve(null); image.src=source;
+  });
+}
+async function openPhotoToSell(file) {
+  if(!file)return;
+  if(file.size>8*1024*1024){showToast('That photo is too large. Choose a photo under 8 MB.');return;}
+  let photo;
+  try{photo=await fileToDataURL(file);}catch{showToast('Could not read that photo.');return;}
+  $('sell-photo-preview').src=photo;
+  const available=(await getAll('products')).filter(p=>num(p.stock)>0).sort((a,b)=>String(a.name).localeCompare(String(b.name)));
+  if(!available.length){navigate('sale');showToast('There are no products in stock to sell.');return;}
+  const signature=await imageColorSignature(photo);
+  const photographed=available.filter(p=>p.photoData);
+  let matches=available;
+  let matchedPhotos=false;
+  if(signature&&photographed.length){
+    const ranked=await Promise.all(photographed.map(async p=>{
+      const other=await imageColorSignature(p.photoData);
+      const distance=other?Math.sqrt(signature.reduce((sum,v,i)=>sum+(v-other[i])**2,0)):Infinity;
+      return {product:p,distance};
+    }));
+    const usable=ranked.filter(x=>Number.isFinite(x.distance)).sort((a,b)=>a.distance-b.distance);
+    if(usable.length){matches=usable.slice(0,5).map(x=>x.product);matchedPhotos=true;}
+  }
+  $('photo-match-note').textContent=matchedPhotos?'Top visual matches from product photos in your stock. Confirm the correct item to add it to the sale.':'No product-photo match is available. Choose the matching item from your current stock.';
+  $('photo-match-list').innerHTML=matches.map((p,i)=>`<button type="button" class="btn block" data-sell-product="${p.id}" style="justify-content:flex-start;margin-top:8px">${productPhoto(p,'42px')}<span style="text-align:left;white-space:normal;flex:1"><b>${esc(p.name)}</b><br><small>${esc(formatQty(p.stock))} ${esc(p.unit)} available · ${money(p.price)}</small></span>${matchedPhotos&&i===0?'<span class="pill good">Closest match</span>':''}</button>`).join('');
+  $('photo-match-modal').classList.add('show');
+}
+async function addPhotoMatchedProduct(id) {
+  const product=await getOne('products',id); if(!product||num(product.stock)<=0){showToast('That product is no longer in stock.');return;}
+  navigate('sale');
+  $('sale-product').value=String(product.id); await refreshSaleUnitOptions();
+  await addCartProduct(product);
+  $('photo-match-modal').classList.remove('show');
+}
 function stopScanner() {
   if(scannerFrame!==null)cancelAnimationFrame(scannerFrame);scannerFrame=null;
   if(scannerStream){scannerStream.getTracks().forEach(track=>track.stop());scannerStream=null;}
@@ -480,7 +527,7 @@ document.addEventListener('click', async event => {
   const go=target.closest('[data-go]');if(go){navigate(go.dataset.go);return;}
   const scan=target.closest('[data-scan]');if(scan){await openScanner(scan.dataset.scan);return;}
   const action=target.closest('[data-action]');if(action){const {action:kind,id}=action.dataset;
-    if(kind==='capture-to-sell'){navigate('sale');await openScanner('sale');return;}
+    if(kind==='capture-to-sell'){$('sell-photo-input').click();return;}
     if(kind==='edit-product')await editProduct(id);
     if(kind==='delete-product')await deleteProduct(id);
     if(kind==='remove-cart'){cart=cart.filter(l=>l.key!==id);renderCart();}
@@ -523,7 +570,11 @@ $('backup-sales').addEventListener('click',async()=>exportSalesCSV(await getAll(
 $('restore-file').addEventListener('change',async e=>{await restoreBackup(e.currentTarget.files?.[0]);e.currentTarget.value='';});
 $('capture-product-photo').addEventListener('click',()=> $('p-photo').click());$('p-photo').addEventListener('change',async e=>{const file=e.currentTarget.files?.[0];if(!file)return;if(file.size>6*1024*1024){e.currentTarget.value='';showToast('Photo is larger than 6 MB.');return;}try{$('photo-preview-img').src=await fileToDataURL(file);$('photo-preview').classList.remove('hidden');}catch{showToast('Could not preview this photo.');}});
 $('close-scanner').addEventListener('click',stopScanner);$('stop-scanner').addEventListener('click',stopScanner);$('scanner-modal').addEventListener('click',e=>{if(e.target===$('scanner-modal'))stopScanner();});
-window.addEventListener('keydown',e=>{if(e.key==='Escape')stopScanner();});
+$('sell-photo-input').addEventListener('change',async e=>{const file=e.currentTarget.files?.[0];e.currentTarget.value='';await openPhotoToSell(file);});
+$('close-photo-match').addEventListener('click',()=> $('photo-match-modal').classList.remove('show'));
+$('photo-match-modal').addEventListener('click',e=>{if(e.target===$('photo-match-modal'))$('photo-match-modal').classList.remove('show');});
+$('photo-match-list').addEventListener('click',async e=>{const button=e.target.closest('[data-sell-product]');if(button)await addPhotoMatchedProduct(button.dataset.sellProduct);});
+window.addEventListener('keydown',e=>{if(e.key==='Escape'){stopScanner();$('photo-match-modal').classList.remove('show');}});
 
 (async function boot(){
   try {

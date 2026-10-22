@@ -1,4 +1,4 @@
-const CACHE_NAME = 'storeledger-shell-v6';
+const CACHE_NAME = 'storeledger-shell-v7';
 const APP_SHELL = ['./', './index.html', './app.js', './manifest.webmanifest', './icon.svg', './logo-header.png', './icon-180.png', './icon-192.png', './icon-512.png', './icon-512-maskable.png'];
 
 self.addEventListener('install', event => {
