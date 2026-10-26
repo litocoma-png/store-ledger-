@@ -27,7 +27,7 @@
 <body>
 <div class="shell">
   <header>
-    <div class="brand"><div class="brand-mark"><img src="logo-header.png" alt="StoreLedger logo"></div><div><h1>StoreLedger</h1><p>Inventory · Sales · Customer Credit</p></div></div>
+    <div class="brand"><div class="brand-mark"><img src="logo-header.png" id="store-logo" alt="StoreLedger logo"></div><div><h1 id="store-name">StoreLedger</h1><p>Inventory · Sales · Customer Credit</p></div></div>
     <div class="status"><span class="status-dot"></span> OFFLINE-READY</div>
   </header>
   <div class="layout">
@@ -72,7 +72,7 @@
             <div class="form-actions"><button type="button" class="btn" id="reset-product">Reset</button><button type="submit" class="btn primary" id="save-product-btn">Save product</button></div>
           </form>
         </div>
-        <div class="panel"><div class="panel-head"><div><h3>Product list</h3><p class="sub" id="product-count">All inventory items.</p></div></div><div class="toolbar"><input class="grow" id="product-search" placeholder="Search product, barcode, category or supplier…"><select id="stock-filter"><option value="all">All stock</option><option value="low">Low stock only</option><option value="out">Out of stock</option></select><button class="btn" id="export-products-csv">Export CSV</button></div><div class="table-wrap" id="product-table"></div></div>
+        <div class="panel"><div class="panel-head"><div><h3>Product list</h3><p class="sub" id="product-count">All inventory items.</p></div></div><div class="toolbar"><input class="grow" id="product-search" placeholder="Search product, barcode, category or supplier…"><select id="stock-filter"><option value="all">All stock</option><option value="low">Low stock only</option><option value="out">Out of stock</option></select><button class="btn" id="export-products-csv">Export Excel</button></div><div class="table-wrap" id="product-table"></div></div>
       </section>
       <section class="view" data-view="sale">
         <div class="page-head"><div><h2>New Sale</h2><p>Scan a barcode or select products. One transaction can include multiple items.</p></div></div>
@@ -123,14 +123,16 @@
         <div class="panel"><div class="panel-head"><div><h3>Customer balances</h3><p class="sub">Outstanding balances update when sales or payments are recorded.</p></div></div><div class="toolbar"><input class="grow" id="customer-search" placeholder="Search customer name or contact…"></div><div class="table-wrap" id="customer-table"></div><div class="section-label">Recent customer payments</div><div id="payment-history"></div><div class="section-label">Customer record history</div><div id="customer-record-history"><div class="empty">Choose “History” beside a customer to review their sales and payments.</div></div></div>
       </section>
       <section class="view" data-view="history">
-        <div class="page-head"><div><h2>Sales History</h2><p>Review cash and credit transactions, print receipts, and track amounts due.</p></div><div class="actions"><button class="btn" id="export-sales-csv">Export CSV</button></div></div>
+        <div class="page-head"><div><h2>Sales History</h2><p>Review cash and credit transactions, print receipts, and track amounts due.</p></div><div class="actions"><button class="btn" id="export-sales-csv">Export Excel</button><button class="btn" id="export-sales-image" type="button">Export image</button></div></div>
         <div class="panel"><div class="toolbar"><input class="grow" id="history-search" placeholder="Search receipt, customer or product…"><select id="history-type"><option value="all">All payment types</option><option value="cash">Cash</option><option value="credit">Credit</option></select></div><div class="table-wrap" id="sales-table"></div></div>
       </section>
       <section class="view" data-view="reports">
         <div class="page-head"><div><h2>Reports & Backup</h2><p>Check store totals and export a copy of your offline data.</p></div></div>
+        <div class="panel"><div class="panel-head"><div><h3>Store name</h3><p class="sub">Choose the name shown in the app, receipts and exported files.</p></div></div><form id="store-name-form" class="toolbar"><label class="grow" for="store-name-input">Business or store name</label><input class="grow" id="store-name-input" maxlength="60" required><button class="btn primary" type="submit">Save name</button></form></div>
         <div class="grid stats" id="report-stats"></div>
+        <div class="panel"><div class="panel-head"><div><h3>Product sales history</h3><p class="sub">See when products were added, quantities sold, sales and estimated gross profit. Sold-out dates are recorded for sales made after this update.</p></div><button class="btn small" id="export-product-sales-image" type="button">Export image</button></div><div id="product-sales-report"></div><div class="section-label">Sale-by-sale details</div><div id="product-sale-details"></div></div>
         <div class="grid two-col">
-          <div class="panel"><div class="panel-head"><div><h3>Sales summary</h3><p class="sub">Based on saved completed transactions.</p></div></div><div id="sales-summary"></div><div class="form-actions"><button class="btn" id="export-report-csv">Export sales CSV</button></div></div>
+          <div class="panel"><div class="panel-head"><div><h3>Sales summary</h3><p class="sub">Based on saved completed transactions.</p></div></div><div id="sales-summary"></div><div class="form-actions"><button class="btn" id="export-report-csv">Export all reports to Excel</button></div></div>
           <div class="panel"><div class="panel-head"><div><h3>Backup & restore</h3><p class="sub">Backups include product photos, customers, sales and payments.</p></div></div><div class="callout info">Keep a backup outside this device. Clearing browser data or losing the device can erase local records.</div><div class="grid backup-grid"><button class="btn primary" id="backup-json">⬇ Download full backup</button><button class="btn" id="backup-products">Download products CSV</button><button class="btn" id="backup-sales">Download sales CSV</button><label class="btn" for="restore-file">⬆ Restore backup JSON</label><input class="hidden" id="restore-file" type="file" accept="application/json,.json"></div><p class="footnote">Restoring replaces the current local database. Export a backup first. Do not edit backup JSON unless you know the format.</p><div class="section-label">Delete app data</div><div class="callout">This permanently deletes all products, customers, sales and payments saved in this browser on this device.</div><button class="btn danger" id="delete-app-data" type="button">Delete all app data</button></div>
         </div>
         <div class="panel"><div class="panel-head"><div><h3>Offline storage details</h3><p class="sub">This copy of StoreLedger does not send your records to a server.</p></div></div><div class="grid report-grid"><div><div class="muted">Database</div><b>IndexedDB</b></div><div><div class="muted">Network use</div><b>None for core features</b></div><div><div class="muted">Backup</div><b>JSON / CSV files</b></div></div><div class="footnote">Camera barcode scanning is available only in browsers that support the Barcode Detection API and allow camera access. Manual barcode/SKU entry always remains available.</div></div>

@@ -1,6 +1,8 @@
 'use strict';
 
 const DB_NAME = 'StoreLedgerOfflineDB';
+const STORE_NAME_KEY = 'StoreLedgerStoreName';
+const DEFAULT_STORE_NAME = 'StoreLedger';
 const DB_VERSION = 1;
 const STORES = ['products', 'customers', 'sales', 'payments'];
 const UNITS = ['piece', 'bag', 'bags', 'dozen', 'length', 'sheet', 'box', 'roll', 'bottle', 'can', 'kg', 'meter', 'liter', 'pack', 'set', 'pair', 'other'];
@@ -25,6 +27,24 @@ const localDateKey = date => { const d = date instanceof Date ? date : new Date(
 const dateText = value => { if (!value) return '—'; const d = new Date(value); return Number.isNaN(d.getTime()) ? '—' : d.toLocaleString('en-PH', { dateStyle:'medium', timeStyle:'short' }); };
 const dateOnly = value => { if (!value) return '—'; const d = new Date(value); return Number.isNaN(d.getTime()) ? '—' : d.toLocaleDateString('en-PH', { dateStyle:'medium' }); };
 const escAttr = value => esc(value);
+function getStoreName() { return (localStorage.getItem(STORE_NAME_KEY) || DEFAULT_STORE_NAME).trim() || DEFAULT_STORE_NAME; }
+function storeFileSlug() { return getStoreName().toLowerCase().replace(/[<>:"/\\|?*\x00-\x1f]/g,'').trim().replace(/\s+/g,'-') || 'store'; }
+function applyStoreName() {
+  const name=getStoreName();
+  document.title=`${name} — Offline`;
+  const heading=$('store-name'); if(heading)heading.textContent=name;
+  const logo=$('store-logo'); if(logo)logo.alt=`${name} logo`;
+  const field=$('store-name-input'); if(field)field.value=name;
+}
+function saveStoreName(event) {
+  event.preventDefault();
+  const name=$('store-name-input').value.trim();
+  if(!name)return showToast('Enter a store name.');
+  if(name.length>60)return showToast('Store name must be 60 characters or fewer.');
+  localStorage.setItem(STORE_NAME_KEY,name);
+  applyStoreName();
+  showToast('Store name saved.');
+}
 
 function openDatabase() {
   return new Promise((resolve, reject) => {
@@ -296,7 +316,7 @@ async function completeSale(event) {
   const now=new Date().toISOString();
   const lines=cart.map(line=>({productId:line.productId,name:line.name,code:line.code,qty:num(line.qty),unit:line.unit,factor:num(line.factor),baseUnit:line.baseUnit,stockQty:num(line.qty)*num(line.factor),unitPrice:cents(line.unitPrice),cost:cents(line.cost),lineTotal:cents(line.qty*line.unitPrice)}));
   const paidAmount=type==='cash'?total:received;
-  const sale={receiptNo:`SL-${localDateKey(new Date()).replaceAll('-','')}-${String(Date.now()).slice(-5)}`,date:now,type,customerId,customerName:customerId?(await getOne('customers',customerId)).name:'Walk-in',lines,total,paidAmount,balanceDue:cents(total-paidAmount),cashReceived:type==='cash'?received:null,change:type==='cash'?cents(Math.max(0,received-total)):0};
+  const stockChanges=[...required].map(([productId,needed])=>{const product=productMap.get(productId);const stockBefore=num(product.stock);const stockAfter=roundQty(Math.max(0,stockBefore-needed));return {productId,productName:product.name,stockUnit:product.unit,stockBefore,stockAfter,soldOut:stockBefore>0&&stockAfter===0};});  const sale={receiptNo:`SL-${localDateKey(new Date()).replaceAll('-','')}-${String(Date.now()).slice(-5)}`,date:now,type,customerId,customerName:customerId?(await getOne('customers',customerId)).name:'Walk-in',lines,total,paidAmount,balanceDue:cents(total-paidAmount),cashReceived:type==='cash'?received:null,change:type==='cash'?cents(Math.max(0,received-total)):0,stockChanges};
   try {
     const tx=db.transaction(['products','sales'],'readwrite');
     const done=transactionDone(tx);
@@ -380,21 +400,23 @@ async function recordPayment(event) {
   try{const tx=db.transaction(['customers','sales','payments'],'readwrite');const done=transactionDone(tx);tx.objectStore('customers').put({...customer,openingBalanceRemaining:openingLeft,updatedAt:new Date().toISOString()});updates.forEach(s=>tx.objectStore('sales').put(s));tx.objectStore('payments').add(payment);await done;}catch(err){console.error(err);return showToast('Payment was not saved. Try again.');}
   $('payment-amount').value='';$('payment-note').value='';await renderCustomers();await renderDashboard();await renderHistory();await renderReports();showToast(`Payment of ${money(amount)} recorded.`);
 }
-async function renderHistory() {
-  const [sales,customers]=await Promise.all([getAll('sales'),getAll('customers')]);const customerMap=new Map(customers.map(c=>[c.id,c]));
-  const search=($('history-search').value||'').trim().toLowerCase();const type=$('history-type').value;
-  const shown=[...sales].sort((a,b)=>new Date(b.date)-new Date(a.date)).filter(s=>{
+function filteredHistorySales(sales) {
+  const search=($('history-search').value||'').trim().toLowerCase(), type=$('history-type').value;
+  return [...sales].sort((a,b)=>new Date(b.date)-new Date(a.date)).filter(s=>{
     if(type!=='all'&&s.type!==type)return false;
     const lines=(s.lines||[]).map(l=>l.name+' '+l.code).join(' ');
     return !search||[s.receiptNo,s.customerName,lines].join(' ').toLowerCase().includes(search);
   });
+}async function renderHistory() {
+  const [sales,customers]=await Promise.all([getAll('sales'),getAll('customers')]);const customerMap=new Map(customers.map(c=>[c.id,c]));
+  const shown=filteredHistorySales(sales);
   $('sales-table').innerHTML=shown.length?`<table><thead><tr><th>Receipt / Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Paid</th><th>Balance due</th><th>Type</th><th>Receipt</th></tr></thead><tbody>${shown.map(s=>`<tr><td><b>${esc(s.receiptNo)}</b><div class="muted">${esc(dateText(s.date))}</div></td><td>${esc(customerMap.get(s.customerId)?.name||s.customerName||'Walk-in')}</td><td>${(s.lines||[]).reduce((n,l)=>n+num(l.qty),0).toLocaleString('en-PH',{maximumFractionDigits:3})} qty<div class="muted">${esc((s.lines||[]).map(l=>l.name).join(', '))}</div></td><td><b>${money(s.total)}</b></td><td>${money(s.paidAmount)}</td><td>${num(s.balanceDue)>0?`<span class="pill low">${money(s.balanceDue)}</span>`:money(0)}</td><td><span class="pill ${s.type==='credit'?'low':'good'}">${s.type==='credit'?'Credit':'Cash'}</span></td><td><button class="btn small" data-action="print-sale" data-id="${s.id}">Print</button></td></tr>`).join('')}</tbody></table>`:emptyState('No sales found','Completed transactions will appear here.');
 }
 async function printReceipt(sale, show=true) {
   if(!sale)return;
   const customer=sale.customerName||'Walk-in';
   const rows=(sale.lines||[]).map(l=>`<tr><td>${esc(l.name)}<br><small>${esc(formatQty(l.qty))} ${esc(l.unit)} × ${money(l.unitPrice)}</small></td><td class="amount">${money(l.lineTotal ?? l.qty*l.unitPrice)}</td></tr>`).join('');
-  const html=`<!doctype html><html><head><meta charset="utf-8"><title>Receipt ${esc(sale.receiptNo)}</title><style>body{font:13px Arial,sans-serif;color:#111;margin:24px}.receipt{max-width:420px;margin:auto}h2,p{text-align:center;margin:5px}table{width:100%;border-collapse:collapse;margin-top:22px}td{padding:9px 0;border-bottom:1px dashed #bbb;vertical-align:top}.amount{text-align:right;white-space:nowrap}.totals{margin:16px 0 0 auto;width:65%}.totals div{display:flex;justify-content:space-between;padding:4px 0}.total{font-size:18px;font-weight:bold;border-top:1px solid #111;padding-top:9px!important}.foot{text-align:center;margin-top:24px;font-size:11px;color:#555}@media print{body{margin:0}.receipt{max-width:none}}</style></head><body><div class="receipt"><h2>STORE RECEIPT</h2><p>StoreLedger Offline</p><p>${esc(sale.receiptNo)}</p><p>${esc(dateText(sale.date))}</p><p>Customer: ${esc(customer)}</p><table>${rows}</table><div class="totals"><div><span>Total</span><b>${money(sale.total)}</b></div><div><span>Paid</span><span>${money(sale.paidAmount)}</span></div><div><span>Balance due</span><span>${money(sale.balanceDue)}</span></div>${sale.type==='cash'?`<div><span>Cash received</span><span>${money(sale.cashReceived)}</span></div><div><span>Change</span><span>${money(sale.change)}</span></div>`:''}<div class="total"><span>Payment type</span><span>${esc(sale.type.toUpperCase())}</span></div></div><p class="foot">Thank you for your purchase.</p></div><script>window.onload=()=>{window.print()}<\/script></body></html>`;
+  const html=`<!doctype html><html><head><meta charset="utf-8"><title>Receipt ${esc(sale.receiptNo)}</title><style>body{font:13px Arial,sans-serif;color:#111;margin:24px}.receipt{max-width:420px;margin:auto}h2,p{text-align:center;margin:5px}table{width:100%;border-collapse:collapse;margin-top:22px}td{padding:9px 0;border-bottom:1px dashed #bbb;vertical-align:top}.amount{text-align:right;white-space:nowrap}.totals{margin:16px 0 0 auto;width:65%}.totals div{display:flex;justify-content:space-between;padding:4px 0}.total{font-size:18px;font-weight:bold;border-top:1px solid #111;padding-top:9px!important}.foot{text-align:center;margin-top:24px;font-size:11px;color:#555}@media print{body{margin:0}.receipt{max-width:none}}</style></head><body><div class="receipt"><h2>STORE RECEIPT</h2><p>${esc(getStoreName())}</p><p>${esc(sale.receiptNo)}</p><p>${esc(dateText(sale.date))}</p><p>Customer: ${esc(customer)}</p><table>${rows}</table><div class="totals"><div><span>Total</span><b>${money(sale.total)}</b></div><div><span>Paid</span><span>${money(sale.paidAmount)}</span></div><div><span>Balance due</span><span>${money(sale.balanceDue)}</span></div>${sale.type==='cash'?`<div><span>Cash received</span><span>${money(sale.cashReceived)}</span></div><div><span>Change</span><span>${money(sale.change)}</span></div>`:''}<div class="total"><span>Payment type</span><span>${esc(sale.type.toUpperCase())}</span></div></div><p class="foot">Thank you for your purchase.</p></div><script>window.onload=()=>{window.print()}<\/script></body></html>`;
   const w=window.open('','_blank','width=520,height=720');
   if(!w){showToast('Your browser blocked the receipt window. Allow pop-ups for this app and try again.');return;}
   w.document.open();w.document.write(html);w.document.close();
@@ -403,18 +425,37 @@ function csvCell(value) { const s=String(value ?? ''); return `"${s.replace(/"/g
 function downloadFile(name, content, type='text/plain;charset=utf-8') {
   const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
+function downloadExcel(name, sheets) {
+  const escXml=value=>String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;');
+  const xml=`<?xml version="1.0"?><Workbook xmlns="urn:schemas-microsoft-com:office:spreadsheet" xmlns:ss="urn:schemas-microsoft-com:office:spreadsheet"><Styles><Style ss:ID="header"><Font ss:Bold="1"/><Interior ss:Color="#E8F1EB" ss:Pattern="Solid"/></Style></Styles>${sheets.map(sheet=>`<Worksheet ss:Name="${escXml(String(sheet.name).slice(0,31).replace(/[\\/?*\[\]:]/g,' '))}"><Table>${sheet.rows.map((row,index)=>`<Row>${row.map(value=>`<Cell${index===0?' ss:StyleID="header"':''}><Data ss:Type="${typeof value==='number'&&Number.isFinite(value)?'Number':'String'}">${escXml(value)}</Data></Cell>`).join('')}</Row>`).join('')}</Table></Worksheet>`).join('')}</Workbook>`;
+  downloadFile(name,xml,'application/vnd.ms-excel;charset=utf-8');
+}
 function exportProductsCSV(products) {
-  const rows=[['ID','Name','Barcode/SKU','Category','Supplier','Cost','Selling price','Stock','Stock unit','Low stock level','Optional unit','Stock units per optional unit','Optional unit price'],...products.map(p=>[p.id,p.name,p.code,p.category,p.supplier,p.cost,p.price,p.stock,p.unit,p.lowStock,p.altUnit,p.altFactor,p.altPrice])];
-  downloadFile(`storeledger-products-${localDateKey(new Date())}.csv`,'\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8');
+  const rows=[['ID','Name','Barcode/SKU','Category','Supplier','Cost','Selling price','Stock','Stock unit','Low stock level','Optional unit','Stock units per optional unit','Optional unit price'],...products.map(p=>[p.id,p.name,p.code,p.category,p.supplier,num(p.cost),num(p.price),num(p.stock),p.unit,num(p.lowStock),p.altUnit,num(p.altFactor),p.altPrice===null?'':num(p.altPrice)])];
+  downloadExcel(`${storeFileSlug()}-products-${localDateKey(new Date())}.xls`,[{name:'Products',rows}]);
 }
 function exportSalesCSV(sales) {
-  const rows=[['Receipt','Date','Type','Customer','Product','Barcode/SKU','Quantity','Unit','Unit price','Line total','Sale total','Paid','Balance due'],...sales.flatMap(s=>(s.lines||[]).map(l=>[s.receiptNo,s.date,s.type,s.customerName,l.name,l.code,l.qty,l.unit,l.unitPrice,l.lineTotal,s.total,s.paidAmount,s.balanceDue]))];
-  downloadFile(`storeledger-sales-${localDateKey(new Date())}.csv`,'\ufeff'+rows.map(r=>r.map(csvCell).join(',')).join('\r\n'),'text/csv;charset=utf-8');
+  const rows=[['Receipt','Date','Type','Customer','Product','Barcode/SKU','Quantity','Unit','Unit price','Line total','Sale total','Paid','Balance due'],...sales.flatMap(s=>(s.lines||[]).map(l=>[s.receiptNo,s.date,s.type,s.customerName||'Walk-in',l.name,l.code,num(l.qty),l.unit,num(l.unitPrice),num(l.lineTotal??l.qty*l.unitPrice),num(s.total),num(s.paidAmount),num(s.balanceDue)]))];
+  downloadExcel(`${storeFileSlug()}-sales-${localDateKey(new Date())}.xls`,[{name:'Sales History',rows}]);
+}
+async function exportSalesSummaryExcel() {
+  const [products,customers,sales,payments]=await Promise.all([getAll('products'),getAll('customers'),getAll('sales'),getAll('payments')]);
+  const todayKey=localDateKey(new Date()), monthKey=todayKey.slice(0,7);
+  const today=sales.filter(s=>localDateKey(s.date)===todayKey), month=sales.filter(s=>localDateKey(s.date).slice(0,7)===monthKey);
+  const outstanding=(await customerBalances(customers,sales)).reduce((sum,c)=>sum+c.balance,0);
+  const grossProfit=sales.reduce((sum,s)=>sum+(s.lines||[]).reduce((sum2,l)=>sum2+num(l.lineTotal??l.qty*l.unitPrice)-num(l.cost)*num(l.stockQty??l.qty),0),0);
+  const sumByType=type=>sales.filter(s=>s.type===type).reduce((sum,s)=>sum+num(s.total),0);
+  const summary=[['Sales Summary','Value'],['Report date',todayKey],['Sales today',today.reduce((sum,s)=>sum+num(s.total),0)],['Transactions today',today.length],['Sales this month',month.reduce((sum,s)=>sum+num(s.total),0)],['Transactions this month',month.length],['Credit outstanding',outstanding],['Estimated gross profit',grossProfit],['All-time sales',sales.reduce((sum,s)=>sum+num(s.total),0)],['Cash sale value',sumByType('cash')],['Credit sale value',sumByType('credit')],['Customer payments recorded',payments.reduce((sum,p)=>sum+num(p.amount),0)],['Products',products.length],['Customers',customers.length],['Gross profit note','Estimated from recorded sale-line costs; excludes overhead and other expenses.']];
+  const salesRows=[['Receipt','Date','Type','Customer','Product','Barcode/SKU','Quantity','Unit','Unit price','Line total','Sale total','Paid','Balance due'],...sales.flatMap(s=>(s.lines||[]).map(l=>[s.receiptNo,s.date,s.type,s.customerName||'Walk-in',l.name,l.code,num(l.qty),l.unit,num(l.unitPrice),num(l.lineTotal??l.qty*l.unitPrice),num(s.total),num(s.paidAmount),num(s.balanceDue)]))];
+  const paymentRows=[['Date','Customer','Amount','Reference / note'],...payments.map(p=>[p.date,p.customerName||'',num(p.amount),p.note||''])];
+  const performanceRows=[['Product','SKU','Date added','Current stock','Unit','Units sold','Sales total','Gross profit','Latest sold-out date'],...productPerformance(products,sales).map(p=>[p.name,p.code,p.createdAt,p.stock,p.unit,p.unitsSold,p.salesTotal,p.grossProfit,p.latestSoldOut])];
+  const detailRows=[['Sale date','Receipt','Product','SKU','Date added','Quantity sold','Unit','Sales','Gross profit','Sold out on sale'],...sales.flatMap(s=>(s.lines||[]).map(l=>{const p=products.find(x=>x.id===l.productId);const event=(s.stockChanges||[]).find(x=>x.productId===l.productId&&x.soldOut);const revenue=num(l.lineTotal??num(l.qty)*num(l.unitPrice));return [s.date,s.receiptNo,l.name,l.code,p?.createdAt||'',num(l.qty),l.unit,revenue,cents(revenue-num(l.cost)*num(l.stockQty??num(l.qty)*num(l.factor||1))),event?s.date:''];}))];
+  downloadExcel(`${storeFileSlug()}-sales-summary-${todayKey}.xls`,[{name:'Summary',rows:summary},{name:'Product Performance',rows:performanceRows},{name:'Product Sale Detail',rows:detailRows},{name:'Sales Details',rows:salesRows},{name:'Payments',rows:paymentRows}]);
 }
 async function exportBackup() {
   const [products,customers,sales,payments]=await Promise.all([getAll('products'),getAll('customers'),getAll('sales'),getAll('payments')]);
   const backup={app:'StoreLedger Offline',backupVersion:1,createdAt:new Date().toISOString(),products,customers,sales,payments};
-  downloadFile(`storeledger-backup-${localDateKey(new Date())}.json`,JSON.stringify(backup,null,2),'application/json;charset=utf-8');showToast('Backup downloaded. Keep it somewhere safe.');
+  downloadFile(`${storeFileSlug()}-backup-${localDateKey(new Date())}.json`,JSON.stringify(backup,null,2),'application/json;charset=utf-8');showToast('Backup downloaded. Keep it somewhere safe.');
 }
 async function restoreBackup(file) {
   if(!file)return;
@@ -425,6 +466,20 @@ async function restoreBackup(file) {
   try{const tx=db.transaction(STORES,'readwrite');const done=transactionDone(tx);for(const store of STORES){const obj=tx.objectStore(store);obj.clear();for(const record of data[store])obj.put(record);}await done;}catch(err){console.error(err);return showToast('Restore failed. Your database may not have changed completely. Check a backup and retry.');}
   cart=[];resetProductForm();resetCustomerForm();await renderAll();showToast('Backup restored successfully.');
 }
+function productPerformance(products,sales) {
+  const rows=new Map(products.map(p=>[p.id,{id:p.id,name:p.name,code:p.code||'',createdAt:p.createdAt||'',stock:num(p.stock),unit:p.unit||'',unitsSold:0,salesTotal:0,grossProfit:0,latestSale:'',latestSoldOut:''}]));
+  for(const sale of [...sales].sort((a,b)=>new Date(a.date)-new Date(b.date))) {
+    for(const line of sale.lines||[]) {
+      const row=rows.get(line.productId); if(!row)continue;
+      const stockQty=num(line.stockQty??num(line.qty)*num(line.factor||1));
+      const revenue=num(line.lineTotal??num(line.qty)*num(line.unitPrice));
+      row.unitsSold+=stockQty; row.salesTotal+=revenue; row.grossProfit+=revenue-num(line.cost)*stockQty;
+      if(!row.latestSale||new Date(sale.date)>new Date(row.latestSale))row.latestSale=sale.date;
+    }
+    for(const event of sale.stockChanges||[])if(event.soldOut&&rows.has(event.productId))rows.get(event.productId).latestSoldOut=sale.date;
+  }
+  return [...rows.values()].sort((a,b)=>a.name.localeCompare(b.name));
+}
 async function renderReports() {
   const [products,customers,sales,payments]=await Promise.all([getAll('products'),getAll('customers'),getAll('sales'),getAll('payments')]);
   const todayKey=localDateKey(new Date());const today=sales.filter(s=>localDateKey(s.date)===todayKey);const monthKey=todayKey.slice(0,7);const month=sales.filter(s=>localDateKey(s.date).slice(0,7)===monthKey);
@@ -432,6 +487,50 @@ async function renderReports() {
   const grossProfit=sales.reduce((sum,s)=>sum+(s.lines||[]).reduce((sum2,l)=>sum2+num(l.lineTotal??l.qty*l.unitPrice)-num(l.cost)*num(l.stockQty??l.qty),0),0);
   $('report-stats').innerHTML=[statCard('Sales today',money(today.reduce((sum,s)=>sum+s.total,0)),`${today.length} transactions`,'₱'),statCard('Sales this month',money(month.reduce((sum,s)=>sum+s.total,0)),`${month.length} transactions`,'▥'),statCard('Credit outstanding',money(outstanding),'Remaining customer balances','♙'),statCard('Estimated gross profit',money(grossProfit),'Before overhead and other expenses','↗')].join('');
   $('sales-summary').innerHTML=`<div class="grid" style="gap:0"><div class="cart-total"><span>All-time sales</span><b>${money(sales.reduce((sum,s)=>sum+num(s.total),0))}</b></div><div class="cart-total"><span>Cash sale value</span><b>${money(sales.filter(s=>s.type==='cash').reduce((sum,s)=>sum+num(s.total),0))}</b></div><div class="cart-total"><span>Credit sale value</span><b>${money(sales.filter(s=>s.type==='credit').reduce((sum,s)=>sum+num(s.total),0))}</b></div><div class="cart-total"><span>Customer payments recorded</span><b>${money(payments.reduce((sum,p)=>sum+num(p.amount),0))}</b></div><div class="cart-total"><span>Products / customers</span><b>${products.length} / ${customers.length}</b></div></div><p class="footnote">Estimated gross profit uses the cost recorded on each sale line. It excludes rent, wages, taxes, damaged stock and other expenses.</p>`;
+  renderProductSalesReport(products,sales);
+}
+function xmlText(value) { return String(value??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&apos;'); }
+function svgTable(headers,rows,widths,y) {
+  const rowH=38, totalWidth=widths.reduce((a,b)=>a+b,0); let out=`<rect x="40" y="${y}" width="${totalWidth}" height="${rowH}" fill="#e8f1eb"/>`;
+  const line=(cells,rowY,bold=false)=>{let x=40;cells.forEach((value,i)=>{const max=Math.max(8,Math.floor((widths[i]-20)/8));const label=String(value??'').length>max?String(value).slice(0,max-1)+'…':String(value??'');out+=`<text x="${x+10}" y="${rowY+25}" font-family="Arial,sans-serif" font-size="15" font-weight="${bold?700:400}" fill="#1b2b22">${xmlText(label)}</text>`;x+=widths[i];});};
+  line(headers,y,true);
+  rows.forEach((row,index)=>{const yy=y+rowH*(index+1);out+=`<rect x="40" y="${yy}" width="${totalWidth}" height="${rowH}" fill="${index%2?'#ffffff':'#f7f9f7'}"/><path d="M40 ${yy+rowH}H${40+totalWidth}" stroke="#dce4df"/>`;line(row,yy);});
+  let x=40; for(const w of widths){x+=w;out+=`<path d="M${x} ${y}V${y+rowH*(rows.length+1)}" stroke="#dce4df"/>`;}
+  return {svg:out,height:rowH*(rows.length+1),width:totalWidth};
+}
+async function exportProductSalesImage() {
+  const [products,sales]=await Promise.all([getAll('products'),getAll('sales')]);
+  const performance=productPerformance(products,sales);
+  const summaryRows=performance.map(p=>[p.name,p.createdAt?dateOnly(p.createdAt):'—',formatQty(p.stock)+' '+p.unit,formatQty(p.unitsSold),money(p.salesTotal),money(p.grossProfit),p.latestSoldOut?dateOnly(p.latestSoldOut):'—']);
+  const details=sales.flatMap(s=>(s.lines||[]).map(l=>({sale:s,line:l,stockEvent:(s.stockChanges||[]).find(x=>x.productId===l.productId&&x.soldOut)}))).sort((a,b)=>new Date(b.sale.date)-new Date(a.sale.date));
+  const detailRows=details.map(({sale,line,stockEvent})=>{const revenue=num(line.lineTotal??num(line.qty)*num(line.unitPrice));const profit=revenue-num(line.cost)*num(line.stockQty??num(line.qty)*num(line.factor||1));return [dateOnly(sale.date),sale.receiptNo,line.name,formatQty(line.qty)+' '+line.unit,money(revenue),money(profit),stockEvent?'Yes':'—'];});
+  const summary=svgTable(['Product','Date added','Current stock','Units sold','Sales','Gross profit','Last sold out'],summaryRows,[300,150,170,130,170,180,160],170);
+  const detailY=170+summary.height+70;
+  const detail=svgTable(['Sale date','Receipt','Product','Quantity','Sales','Gross profit','Stock-out'],detailRows,[160,190,320,150,180,190,140],detailY);
+  const width=Math.max(summary.width,detail.width)+80,height=detailY+detail.height+50;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="#ffffff"/><text x="40" y="54" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="#172d23">${xmlText(getStoreName())} — Product Sales History</text><text x="40" y="91" font-family="Arial,sans-serif" font-size="16" fill="#65736d">Exported ${xmlText(dateText(new Date()))} · Gross profit is estimated from saved sale-line costs.</text><text x="40" y="143" font-family="Arial,sans-serif" font-size="21" font-weight="700" fill="#172d23">Product summary</text>${summary.svg}<text x="40" y="${detailY-24}" font-family="Arial,sans-serif" font-size="21" font-weight="700" fill="#172d23">Sale-by-sale details</text>${detail.svg}</svg>`;
+  const image=new Image(), url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+  image.onload=()=>{try{const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d');ctx.drawImage(image,0,0);canvas.toBlob(blob=>{if(blob){downloadFile(`${storeFileSlug()}-product-sales-history-${localDateKey(new Date())}.png`,blob,'image/png');showToast('Product sales history image downloaded.');}else showToast('Could not create the image. Try a smaller report.');},'image/png');}catch(err){console.error(err);showToast('Could not create the image. Try a smaller report.');}finally{URL.revokeObjectURL(url);}};
+  image.onerror=()=>{URL.revokeObjectURL(url);showToast('Could not create the image. Try again.');};
+  image.src=url;
+}async function exportSalesHistoryImage() {
+  const [allSales,customers]=await Promise.all([getAll('sales'),getAll('customers')]);
+  const sales=filteredHistorySales(allSales), customerMap=new Map(customers.map(c=>[c.id,c]));
+  const transactions=sales.map(s=>[s.receiptNo,dateText(s.date),customerMap.get(s.customerId)?.name||s.customerName||'Walk-in',(s.lines||[]).map(l=>l.name).join(', '),money(s.total),money(s.paidAmount),money(s.balanceDue),s.type==='credit'?'Credit':'Cash']);
+  const details=sales.flatMap(s=>(s.lines||[]).map(l=>{const revenue=num(l.lineTotal??num(l.qty)*num(l.unitPrice));const profit=revenue-num(l.cost)*num(l.stockQty??num(l.qty)*num(l.factor||1));return [dateText(s.date),s.receiptNo,l.name,formatQty(l.qty)+' '+l.unit,money(l.unitPrice),money(revenue),money(profit)];}));
+  const txTable=svgTable(['Receipt','Date','Customer','Items','Total','Paid','Balance','Type'],transactions,[170,190,210,350,150,150,150,110],170);
+  const detailY=170+txTable.height+70;
+  const detailTable=svgTable(['Sale date','Receipt','Product','Quantity','Unit price','Line total','Gross profit'],details,[190,180,330,150,160,170,190],detailY);
+  const width=Math.max(txTable.width,detailTable.width)+80,height=detailY+detailTable.height+50;
+  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><rect width="100%" height="100%" fill="#fff"/><text x="40" y="54" font-family="Arial,sans-serif" font-size="30" font-weight="700" fill="#172d23">${xmlText(getStoreName())} — Sales History</text><text x="40" y="91" font-family="Arial,sans-serif" font-size="16" fill="#65736d">Exported ${xmlText(dateText(new Date()))} · ${sales.length} transaction(s)</text><text x="40" y="143" font-family="Arial,sans-serif" font-size="21" font-weight="700" fill="#172d23">Transactions</text>${txTable.svg}<text x="40" y="${detailY-24}" font-family="Arial,sans-serif" font-size="21" font-weight="700" fill="#172d23">Sale-by-sale product details</text>${detailTable.svg}</svg>`;
+  const image=new Image(),url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+  image.onload=()=>{try{const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;canvas.getContext('2d').drawImage(image,0,0);canvas.toBlob(blob=>{if(blob){downloadFile(`${storeFileSlug()}-sales-history-${localDateKey(new Date())}.png`,blob,'image/png');showToast('Sales history image downloaded.');}else showToast('Could not create the image. Try a smaller report.');},'image/png');}catch(err){console.error(err);showToast('Could not create the image. Try a smaller report.');}finally{URL.revokeObjectURL(url);}};
+  image.onerror=()=>{URL.revokeObjectURL(url);showToast('Could not create the image. Try again.');}; image.src=url;
+}function renderProductSalesReport(products,sales) {
+  const performance=productPerformance(products,sales);
+  $('product-sales-report').innerHTML=performance.length?`<div class="table-wrap"><table><thead><tr><th>Product</th><th>Date added</th><th>Current stock</th><th>Units sold</th><th>Sales</th><th>Gross profit</th><th>Last sale</th><th>Last sold out</th></tr></thead><tbody>${performance.map(p=>`<tr><td><b>${esc(p.name)}</b><div class="muted">${esc(p.code||'')}</div></td><td>${esc(p.createdAt?dateOnly(p.createdAt):'—')}</td><td>${esc(formatQty(p.stock))} ${esc(p.unit)}</td><td>${esc(formatQty(p.unitsSold))}</td><td>${money(p.salesTotal)}</td><td>${money(p.grossProfit)}</td><td>${esc(p.latestSale?dateText(p.latestSale):'—')}</td><td>${esc(p.latestSoldOut?dateText(p.latestSoldOut):'—')}</td></tr>`).join('')}</tbody></table></div>`:emptyState('No products yet','Add products to see product sales history.');
+  const details=sales.flatMap(s=>(s.lines||[]).map(l=>({sale:s,line:l,stockEvent:(s.stockChanges||[]).find(x=>x.productId===l.productId&&x.soldOut)}))).sort((a,b)=>new Date(b.sale.date)-new Date(a.sale.date));
+  $('product-sale-details').innerHTML=details.length?`<div class="table-wrap"><table><thead><tr><th>Sale date</th><th>Receipt</th><th>Product</th><th>Date added</th><th>Quantity</th><th>Sales</th><th>Gross profit</th><th>Stock-out</th></tr></thead><tbody>${details.map(({sale,line,stockEvent})=>{const p=products.find(x=>x.id===line.productId);const revenue=num(line.lineTotal??num(line.qty)*num(line.unitPrice));const profit=revenue-num(line.cost)*num(line.stockQty??num(line.qty)*num(line.factor||1));return `<tr><td>${esc(dateText(sale.date))}</td><td>${esc(sale.receiptNo)}</td><td><b>${esc(line.name)}</b><div class="muted">${esc(line.code||'')}</div></td><td>${esc(p?.createdAt?dateOnly(p.createdAt):'—')}</td><td>${esc(formatQty(line.qty))} ${esc(line.unit||'')}</td><td>${money(revenue)}</td><td>${money(profit)}</td><td>${stockEvent?esc(dateText(sale.date)):'—'}</td></tr>`;}).join('')}</tbody></table></div>`:emptyState('No product sales yet','Completed sales will appear here, with item quantities and gross profit.');
 }
 async function renderAll() { await updateSelects(); await renderDashboard(); await renderProducts(); await renderSalePage(); await renderCustomers(); await renderHistory(); await renderReports(); }
 
@@ -543,6 +642,8 @@ $('cancel-product-edit').addEventListener('click',resetProductForm);
 $('new-product-btn').addEventListener('click',()=>{resetProductForm();$('p-name').focus();});
 $('product-search').addEventListener('input',()=>renderProducts());
 $('stock-filter').addEventListener('change',()=>renderProducts());
+$('store-name-form').addEventListener('submit',saveStoreName);
+$('export-product-sales-image').addEventListener('click',exportProductSalesImage);
 $('export-products-csv').addEventListener('click',async()=>exportProductsCSV(await getAll('products')));
 $('sale-product').addEventListener('change',refreshSaleUnitOptions);
 $('sale-unit').addEventListener('change',setSalePriceFromUnit);
@@ -561,8 +662,9 @@ $('checkout-form').addEventListener('submit',completeSale);
 $('customer-form').addEventListener('submit',saveCustomer);$('reset-customer').addEventListener('click',resetCustomerForm);
 $('payment-form').addEventListener('submit',recordPayment);$('customer-search').addEventListener('input',renderCustomers);
 $('history-search').addEventListener('input',renderHistory);$('history-type').addEventListener('change',renderHistory);
-$('export-sales-csv').addEventListener('click',async()=>exportSalesCSV(await getAll('sales')));
-$('export-report-csv').addEventListener('click',async()=>exportSalesCSV(await getAll('sales')));
+$('export-sales-csv').addEventListener('click',async()=>exportSalesCSV(filteredHistorySales(await getAll('sales'))));
+$('export-sales-image').addEventListener('click',exportSalesHistoryImage);
+$('export-report-csv').addEventListener('click',exportSalesSummaryExcel);
 $('backup-json').addEventListener('click',exportBackup);
 $('delete-app-data').addEventListener('click',deleteAllAppData);
 $('backup-products').addEventListener('click',async()=>exportProductsCSV(await getAll('products')));
@@ -579,6 +681,7 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape'){stopScanner();$('phot
 (async function boot(){
   try {
     if(!('indexedDB' in window))throw new Error('This browser does not support IndexedDB. Please use a recent version of Chrome, Edge, Firefox or Safari.');
+    applyStoreName();
     populateStaticSelects();
     db=await openDatabase();
     if('serviceWorker' in navigator && (location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1')) {
@@ -590,3 +693,4 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape'){stopScanner();$('phot
     document.querySelector('main').innerHTML=`<div class="panel"><h2>StoreLedger could not start</h2><p>${esc(err.message)}</p><p>Open the app from localhost or HTTPS, not directly as a file, and use a modern browser.</p></div>`;
   }
 })();
+
