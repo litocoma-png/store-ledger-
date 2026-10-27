@@ -44,8 +44,84 @@
     }
     @media(max-width:370px){.shell{padding-left:10px;padding-right:10px}.sidebar{padding-left:2px;padding-right:2px}.nav-btn{min-width:48px;padding-left:4px;padding-right:4px;font-size:8px}.cart-line{grid-template-columns:minmax(0,1fr) 56px 68px 24px}.view[data-view="sale"] .form-grid{gap:7px}}
   </style>
+  <style>
+    .sidebar .nav-btn .ico{width:34px;height:34px;flex:0 0 34px;display:grid;place-items:center}
+    .sidebar .nav-btn .ico img{display:block;width:100%;height:100%;object-fit:contain}
+    @media(max-width:700px){.sidebar{left:0;right:0;width:100%;justify-content:center}.sidebar .nav-btn{flex:1 1 0;min-width:0;width:0;white-space:normal;overflow:hidden;padding-left:2px;padding-right:2px;gap:2px;font-size:8px;line-height:1.12}.sidebar .nav-btn .ico{width:31px;height:31px;flex-basis:31px}.sidebar .nav-btn:nth-child(2) .ico{width:34px;height:34px;flex-basis:34px}.sidebar .nav-btn:nth-child(3) .ico{width:36px;height:36px;flex-basis:36px}.sidebar .nav-btn:nth-child(4) .ico{width:30px;height:30px;flex-basis:30px}.sidebar .nav-btn:nth-child(5) .ico{width:31px;height:31px;flex-basis:31px}.sidebar .nav-btn:nth-child(6) .ico{width:31px;height:31px;flex-basis:31px}}
+    @media(max-width:370px){.sidebar .nav-btn{font-size:7px}.sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:27px;height:27px;flex-basis:27px}}
+  </style>
+  <style>
+    .quick-access{margin:0 0 16px}.quick-access h3{font-size:15px;margin:0 0 10px}.quick-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}.quick-tile{border:1px solid var(--line);background:#fff;border-radius:16px;min-height:98px;padding:10px 8px;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:5px;font-weight:700;color:var(--ink);text-align:center}.quick-tile img{width:48px;height:48px;object-fit:contain}.quick-tile span{font-size:11px}
+    .pos-search-row{display:flex;align-items:center;position:relative;margin:0 0 11px}.pos-search-row input{width:100%;min-height:46px;border:1px solid #d5e0d9;border-radius:14px;background:#f7f9f8;padding:10px 42px 10px 14px;font-size:15px;outline:none}.pos-search-row input:focus{border-color:#559d7d;box-shadow:0 0 0 3px rgba(38,120,92,.11)}.pos-search-clear{position:absolute;right:5px;width:36px;height:36px;border:0;background:transparent;font-size:21px;color:var(--muted)}.pos-categories{display:flex;gap:7px;overflow-x:auto;padding:1px 0 10px;scrollbar-width:none}.pos-categories::-webkit-scrollbar{display:none}.pos-category{white-space:nowrap;border:1px solid var(--line);background:#fff;border-radius:999px;padding:7px 13px;font-size:12px;font-weight:700;color:#52615a}.pos-category.active{background:#125c45;border-color:#125c45;color:#fff}.pos-product-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.pos-product-card{padding:0;overflow:hidden;border:1px solid #e1e8e3;border-radius:13px;background:#fff;text-align:left;color:var(--ink);min-width:0;box-shadow:0 2px 7px #153c2b08}.pos-product-card:active{transform:scale(.98)}.pos-product-card:disabled{opacity:.5}.pos-product-photo{width:100%;aspect-ratio:1.15;object-fit:cover;background:#edf3ef;display:grid;place-items:center;color:#125c45;font-size:25px;font-weight:800}.pos-product-info{padding:7px 8px 8px}.pos-product-name{font-size:12px;line-height:1.25;font-weight:750;min-height:30px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}.pos-product-price{color:#125c45;font-size:13px;font-weight:850;margin-top:4px}.pos-product-stock{color:var(--muted);font-size:10px;margin-top:1px}.sale-manual-entry{margin-top:12px;border-top:1px solid var(--line);padding-top:10px}.sale-manual-entry summary{font-size:12px;color:var(--muted);font-weight:700;cursor:pointer}.sale-manual-entry[open] summary{margin-bottom:10px}
+    @media(max-width:700px){.view[data-view="dashboard"] .quick-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}.view[data-view="dashboard"] .quick-tile{min-height:90px;border-radius:15px}.view[data-view="dashboard"] .quick-tile img{width:45px;height:45px}.pos-product-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.pos-product-card{border-radius:11px}.pos-product-info{padding:6px}.pos-product-name{font-size:11px;min-height:28px}.pos-product-price{font-size:12px}.pos-product-stock{font-size:9px}.pos-search-row input{min-height:48px;border-radius:16px}.sale-manual-entry{margin-top:10px}.view[data-view="sale"] .sale-layout>.panel:last-child{order:0}.view[data-view="sale"] .sale-layout>.panel:first-child{order:1}.view[data-view="sale"] .sale-layout{display:flex;flex-direction:column}.view[data-view="sale"] .sale-layout>.panel:last-child{position:sticky;bottom:calc(72px + env(safe-area-inset-bottom));z-index:8;box-shadow:0 8px 24px #153c2b20;max-height:38vh;overflow:auto}.view[data-view="sale"] .sale-layout>.panel:first-child{width:100%}.view[data-view="sale"] .sale-layout>.panel:last-child .cart-line{grid-template-columns:minmax(0,1fr) 55px 65px 24px}.view[data-view="sale"] .sale-layout>.panel:last-child #cart-lines .empty{padding:10px}.view[data-view="sale"] .sale-layout>.panel:last-child #checkout-form{display:grid;grid-template-columns:1fr 1fr;gap:8px}.view[data-view="sale"] .sale-layout>.panel:last-child #checkout-form .form-grid{display:contents}.view[data-view="sale"] .sale-layout>.panel:last-child #checkout-form .field{min-width:0}.view[data-view="sale"] .sale-layout>.panel:last-child #checkout-form .field.full,.view[data-view="sale"] .sale-layout>.panel:last-child #checkout-form .notice,.view[data-view="sale"] .sale-layout>.panel:last-child #checkout-form>button{grid-column:1/-1;margin-top:0!important}.view[data-view="sale"] .sale-layout>.panel:last-child #checkout-form .field input,.view[data-view="sale"] .sale-layout>.panel:last-child #checkout-form .field select{min-height:42px;padding:8px;font-size:14px}.view[data-view="sale"] .sale-layout>.panel:last-child #checkout-form>button{min-height:46px;position:static}.view[data-view="sale"] .sale-layout>.panel:last-child .cart-total{padding:8px 0}.view[data-view="sale"] .sale-layout>.panel:last-child .big-total{font-size:22px}.view[data-view="sale"] .sale-layout>.panel:last-child .panel-head{margin-bottom:5px}}
+    @media(max-width:370px){.pos-product-grid{gap:6px}.pos-product-info{padding:5px}.pos-product-name{font-size:10px}.pos-product-price{font-size:11px}.view[data-view="dashboard"] .quick-tile{min-height:82px}.view[data-view="dashboard"] .quick-tile img{width:40px;height:40px}}
+  </style>
+  <style id="professional-phone-layout">
+    @media(max-width:700px){
+      .shell{max-width:440px}
+      .view[data-view="dashboard"] .quick-grid{grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
+      .view[data-view="dashboard"] .quick-tile{grid-column:span 2;min-height:94px;padding:9px 6px;background:linear-gradient(180deg,#fff 0%,#f9fbfa 100%);box-shadow:0 3px 12px rgba(22,59,43,.06)}
+      .view[data-view="dashboard"] .quick-tile:nth-child(4){grid-column:2/span 2}
+      .view[data-view="dashboard"] .quick-tile:nth-child(5){grid-column:4/span 2}
+      .view[data-view="dashboard"] .quick-tile img{width:43px;height:43px}
+      .view[data-view="sale"] .sale-layout>.panel:first-child{order:0}
+      .view[data-view="sale"] .sale-layout>.panel:last-child{order:1;position:sticky;bottom:calc(70px + env(safe-area-inset-bottom));max-height:36vh;overflow:auto;border-color:#dce8e1;box-shadow:0 10px 28px rgba(17,63,45,.16)}
+      .view[data-view="sale"] .sale-layout>.panel:last-child .panel-head{align-items:center}
+      .view[data-view="sale"] .sale-layout>.panel:last-child .cart-line{grid-template-columns:minmax(0,1fr) 52px 62px 24px}
+      .view[data-view="sale"] .sale-layout>.panel:last-child #checkout-form{padding-top:2px}
+      .view[data-view="sale"] .sale-layout>.panel:last-child #checkout-form>button{position:static;min-height:48px}
+      .view[data-view="sale"] .pos-product-grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+      .view[data-view="sale"] .pos-product-card{min-height:154px;border:1px solid #e2e9e4;box-shadow:0 3px 10px rgba(17,63,45,.07)}
+      .view[data-view="sale"] .pos-product-photo{aspect-ratio:1.08}
+      .view[data-view="sale"] .pos-category{min-height:36px;padding:8px 13px}
+      .sidebar .nav-btn{min-height:54px;border-radius:13px}
+      .sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:29px;height:29px;flex-basis:29px}
+      .sidebar .nav-btn.active{background:#e7f2ec;color:#125c45}
+    }
+    @media(max-width:370px){
+      .view[data-view="dashboard"] .quick-grid{gap:6px}
+      .view[data-view="dashboard"] .quick-tile{min-height:84px;font-size:10px}
+      .view[data-view="dashboard"] .quick-tile img{width:37px;height:37px}
+      .view[data-view="sale"] .pos-product-card{min-height:140px}
+      .sidebar .nav-btn{font-size:7px}
+    }
+  </style>
+  <style id="mobile-icon-only-navigation">
+    .nav-label{display:inline}
+    @media(max-width:700px){.sidebar .nav-btn{position:relative;align-items:center;justify-content:center;gap:0;padding:5px 2px}.sidebar .nav-btn .nav-label{position:static;width:auto;height:auto;padding:0;margin:0;overflow:visible;clip-path:none;white-space:normal;border:0;font-size:11px;line-height:1.15;font-weight:700;text-align:center;color:#35453d}.sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:32px;height:32px;flex:0 0 32px}.sidebar .nav-btn.active{background:#e7f2ec;box-shadow:inset 0 0 0 1px #d3e8db}.sidebar .nav-btn.active .ico{filter:drop-shadow(0 2px 4px rgba(18,92,69,.16))}}
+    @media(max-width:370px){.sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:28px;height:28px;flex-basis:28px}}
+  </style>
+  <style id="move-mobile-navigation-off-bottom">
+    @media(max-width:700px){body{padding-bottom:24px}.sidebar{position:sticky;top:calc(55px + env(safe-area-inset-top));left:auto;right:auto;bottom:auto;width:100%;max-width:440px;margin:0 auto 12px;padding:5px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));justify-content:stretch;gap:4px;overflow:visible;border:1px solid #e2e9e4;border-radius:15px;background:rgba(255,255,255,.97);box-shadow:0 4px 15px rgba(17,63,45,.09);z-index:14}.sidebar .nav-btn{width:auto;min-width:0;min-height:43px;flex:1 1 auto;margin:0;padding:5px 2px;border-radius:11px}.sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:29px;height:29px;flex-basis:29px}.toast{bottom:16px}}
+    @media(max-width:370px){.sidebar{gap:2px;padding:4px}.sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:26px;height:26px;flex-basis:26px}}
+  </style>
+  <style id="mobile-home-icon-launcher">
+    @media(max-width:700px){
+      body{padding-bottom:0}
+      .shell{width:100%;max-width:440px;min-height:100svh;display:flex;flex-direction:column;padding:0 14px calc(14px + env(safe-area-inset-bottom))}
+      header{flex:0 0 auto;width:100%;margin:0 -14px 8px;padding:calc(10px + env(safe-area-inset-top)) 14px 9px}
+      .layout{display:flex;flex:1;min-height:calc(100svh - 66px);flex-direction:column;gap:4px}
+      .sidebar{position:static;inset:auto;width:100%;max-width:none;flex:1;margin:0;padding:18px 4px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(96px,1fr));align-content:center;align-items:center;justify-items:center;gap:clamp(10px,4vw,20px);overflow:visible;border:0;border-radius:0;background:transparent;box-shadow:none}
+      .sidebar .nav-btn{position:relative;width:clamp(88px,25vw,112px);height:clamp(108px,31vw,132px);min-width:0;min-height:0;flex:none;margin:0;padding:10px 6px;border:1px solid #e3eae5;border-radius:25px;background:#fff;box-shadow:0 8px 24px rgba(19,57,42,.09);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
+      .sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:clamp(54px,16vw,68px);height:clamp(54px,16vw,68px);flex:none}
+      .sidebar .nav-btn .nav-label{position:static;width:auto;height:auto;padding:0;margin:0;overflow:visible;clip-path:none;white-space:normal;border:0;font-size:11px;line-height:1.15;font-weight:700;text-align:center;color:#35453d}
+      .sidebar .nav-btn.active{border:2px solid #2b845f;background:#f3faf6;box-shadow:0 10px 28px rgba(18,92,69,.18)}
+      .sidebar-foot{display:none}
+      body.home-screen #app-view{display:block}
+      body.home-screen .view[data-view="dashboard"]>*{display:none!important}
+      body.home-screen .layout{display:flex;flex:1;min-height:calc(100svh - 66px);flex-direction:column;gap:4px}
+      body.home-screen .sidebar{flex:1;padding:18px 4px;grid-template-rows:repeat(2,minmax(96px,1fr));gap:clamp(10px,4vw,20px)}
+      body:not(.home-screen) .layout{min-height:auto}
+      body:not(.home-screen) .sidebar{position:sticky;top:calc(55px + env(safe-area-inset-top));z-index:14;flex:0 0 auto;margin:0 auto 12px;padding:5px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:auto;gap:3px;border:1px solid #e2e9e4;border-radius:15px;background:rgba(255,255,255,.97);box-shadow:0 4px 15px rgba(17,63,45,.09)}
+      body:not(.home-screen) .sidebar .nav-btn{width:100%;height:43px;min-height:43px;padding:4px;border:0;border-radius:11px;box-shadow:none;background:transparent}
+      body:not(.home-screen) .sidebar .nav-btn .ico,body:not(.home-screen) .sidebar .nav-btn:nth-child(n) .ico{width:29px;height:29px;flex-basis:29px}
+      body:not(.home-screen) .sidebar .nav-btn .nav-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+      body:not(.home-screen) .sidebar .nav-btn.active{background:#e7f2ec;box-shadow:inset 0 0 0 1px #d3e8db}
+    }
+    @media(max-width:370px){.sidebar .nav-btn{width:84px;height:104px}.sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:52px;height:52px}.sidebar .nav-btn .nav-label{font-size:10px}.sidebar{grid-template-rows:repeat(2,minmax(108px,1fr))}}
+  </style>
 </head>
-<body>
+<body class="home-screen">
 <div class="shell">
   <header>
     <div class="brand"><div class="brand-mark"><img src="logo-header.png" id="store-logo" alt="StoreLedger logo"></div><div><h1 id="store-name">StoreLedger</h1><p>Inventory · Sales · Customer Credit</p></div></div>
@@ -53,18 +129,19 @@
   </header>
   <div class="layout">
     <nav class="sidebar" aria-label="Main navigation">
-      <button type="button" class="nav-btn active" data-page="dashboard" aria-current="page" aria-controls="app-view"><span class="ico">▦</span>Dashboard</button>
-      <button type="button" class="nav-btn" data-page="products" aria-controls="app-view"><span class="ico">▤</span>Products & Stock</button>
-      <button type="button" class="nav-btn" data-page="sale" aria-controls="app-view"><span class="ico">＋</span>New Sale</button>
-      <button type="button" class="nav-btn" data-page="customers" aria-controls="app-view"><span class="ico">♙</span>Credit Accounts</button>
-      <button type="button" class="nav-btn" data-page="history" aria-controls="app-view"><span class="ico">↻</span>Sales History</button>
-      <button type="button" class="nav-btn" data-page="reports" aria-controls="app-view"><span class="ico">▥</span>Reports & Backup</button>
+      <button type="button" class="nav-btn active" data-page="dashboard" aria-label="Dashboard" title="Dashboard" aria-current="page" aria-controls="app-view"><span class="ico"><img src="dashboard-icon.png" alt="" loading="lazy"></span><span class="nav-label">Dashboard</span></button>
+      <button type="button" class="nav-btn" data-page="products" aria-label="Products & Stock" title="Products & Stock" aria-controls="app-view"><span class="ico"><img src="products-stock-icon.png" alt="" loading="lazy"></span><span class="nav-label">Products & Stock</span></button>
+      <button type="button" class="nav-btn" data-page="sale" aria-label="New Sale" title="New Sale" aria-controls="app-view"><span class="ico"><img src="pos-sales-icon.png" alt="" loading="lazy"></span><span class="nav-label">New Sale</span></button>
+      <button type="button" class="nav-btn" data-page="customers" aria-label="Credit Accounts" title="Credit Accounts" aria-controls="app-view"><span class="ico"><img src="customer-account-icon.png" alt="" loading="lazy"></span><span class="nav-label">Credit Accounts</span></button>
+      <button type="button" class="nav-btn" data-page="history" aria-label="Sales History" title="Sales History" aria-controls="app-view"><span class="ico"><img src="sales-history-icon.png" alt="" loading="lazy"></span><span class="nav-label">Sales History</span></button>
+      <button type="button" class="nav-btn" data-page="reports" aria-label="Reports & Backup" title="Reports & Backup" aria-controls="app-view"><span class="ico"><img src="reports-backup-icon.png" alt="" loading="lazy"></span><span class="nav-label">Reports & Backup</span></button>
       <div class="sidebar-foot">Saved on this device using IndexedDB. Export backups regularly.</div>
     </nav>
     <main id="app-view" tabindex="-1">
       <section class="view active" data-view="dashboard">
         <div class="page-head"><div><h2>Dashboard</h2><p>Your store at a glance.</p></div><div class="actions"><button class="btn" data-action="capture-to-sell">📷 Capture product to sell</button><button class="btn primary" data-go="sale">＋ New sale</button></div></div>
         <div class="grid stats" id="dash-stats"></div>
+        <div class="quick-access"><h3>Quick access</h3><div class="quick-grid"><button class="quick-tile" data-go="sale"><img src="pos-sales-icon.png" alt=""><span>New Sale</span></button><button class="quick-tile" data-go="products"><img src="products-stock-icon.png" alt=""><span>Products & Stock</span></button><button class="quick-tile" data-go="customers"><img src="customer-account-icon.png" alt=""><span>Credit Accounts</span></button><button class="quick-tile" data-go="history"><img src="sales-history-icon.png" alt=""><span>Sales History</span></button><button class="quick-tile" data-go="reports"><img src="reports-backup-icon.png" alt=""><span>Reports & Backup</span></button></div></div>
         <div class="grid two-col">
           <div class="panel"><div class="panel-head"><div><h3>Low-stock alerts</h3><p class="sub">Products at or below their alert level.</p></div><button class="btn small" data-go="products">View products</button></div><div id="dash-low"></div></div>
           <div class="panel"><div class="panel-head"><div><h3>Recent sales</h3><p class="sub">Most recent transactions.</p></div><button class="btn small" data-go="history">View history</button></div><div id="dash-recent"></div></div>
@@ -99,8 +176,11 @@
         <div class="page-head"><div><h2>New Sale</h2><p>Scan a barcode or select products. One transaction can include multiple items.</p></div></div>
         <div class="sale-layout">
           <div class="panel">
-            <div class="panel-head"><div><h3>Add item to sale</h3><p class="sub">Stock decreases when you complete the transaction.</p></div></div>
-            <div class="form-grid">
+                        <div class="panel-head pos-heading"><div><h3>Choose products</h3><p class="sub">Tap a product to add it to the sale.</p></div><button class="btn small" type="button" data-scan="sale" aria-label="Scan barcode">▦ Scan</button></div>
+            <div class="pos-search-row"><input id="pos-product-search" type="search" placeholder="Search product or scan barcode…" autocomplete="off" aria-label="Search product or scan barcode"><button class="btn pos-search-clear" type="button" id="clear-pos-search" aria-label="Clear search">×</button></div>
+            <div class="pos-categories" id="pos-categories" aria-label="Product categories"></div>
+            <div class="pos-product-grid" id="pos-product-grid"></div>
+            <details class="sale-manual-entry"><summary>Manual item entry and unit pricing</summary><div class="form-grid">
               <div class="field full"><label for="sale-barcode">Barcode / SKU scan</label><div style="display:flex;gap:7px"><input id="sale-barcode" placeholder="Scan or enter barcode, then press Enter"><button class="btn" type="button" data-scan="sale">▦ Scan</button></div></div>
               <div class="field full"><label for="sale-product">Product *</label><select id="sale-product"></select></div>
               <div class="field"><label for="sale-qty">Quantity *</label><input id="sale-qty" type="number" min="0.001" step="0.001" value="1"></div>
@@ -108,7 +188,7 @@
               <div class="field"><label for="sale-unit-price">Price per selling unit (₱)</label><input id="sale-unit-price" type="number" min="0" step="0.01" value="0"></div>
               <div class="field"><label>&nbsp;</label><button class="btn primary block" id="add-cart-item" type="button">＋ Add to transaction</button></div>
             </div>
-            <div class="footnote">Selling in a different unit uses the conversion factor saved on the product. Check it before selling if you use mixed units.</div>
+            <div class="footnote">Selling in a different unit uses the conversion factor saved on the product. Check it before selling if you use mixed units.</div></details>
           </div>
           <div class="panel">
             <div class="panel-head"><div><h3>Current transaction</h3><p class="sub" id="cart-count">No items yet</p></div><button type="button" class="btn small" id="clear-cart">Clear</button></div>

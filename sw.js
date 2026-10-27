@@ -1,5 +1,5 @@
-const CACHE_NAME = 'storeledger-shell-v7';
-const APP_SHELL = ['./', './index.html', './app.js', './manifest.webmanifest', './icon.svg', './logo-header.png', './icon-180.png', './icon-192.png', './icon-512.png', './icon-512-maskable.png'];
+const CACHE_NAME = 'storeledger-shell-v9';
+const APP_SHELL = ['./', './index.html', './app.js', './manifest.webmanifest', './icon.svg', './logo-header.png', './icon-180.png', './icon-192.png', './icon-512.png', './icon-512-maskable.png', './dashboard-icon.png', './products-stock-icon.png', './pos-sales-icon.png', './customer-account-icon.png', './sales-history-icon.png', './reports-backup-icon.png'];
 
 self.addEventListener('install', event => {
   event.waitUntil(caches.open(CACHE_NAME).then(cache => cache.addAll(APP_SHELL)));
