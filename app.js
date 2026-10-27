@@ -16,6 +16,7 @@ let scannerFrame = null;
 let scannerTarget = null;
 let scannerDetector = null;
 let toastTimer = null;
+let saleSubmissionInProgress = false;
 
 const $ = id => document.getElementById(id);
 const money = n => moneyFmt.format(Number(n || 0));
@@ -305,6 +306,11 @@ function updateCheckoutNotice() {
 }
 async function completeSale(event) {
   event.preventDefault();
+  if(saleSubmissionInProgress)return;
+  saleSubmissionInProgress=true;
+  const submitButton=$('checkout-form').querySelector('button[type="submit"]');
+  submitButton.disabled=true;
+  try {
   if(!cart.length)return showToast('Add at least one product.');
   const type=$('sale-type').value; const customerId=$('sale-customer').value?Number($('sale-customer').value):null; const total=cartTotal(); const received=cents(num($('sale-paid').value));
   if(type==='credit'&&!customerId)return showToast('A customer is required for a credit sale.');
@@ -318,7 +324,9 @@ async function completeSale(event) {
   const now=new Date().toISOString();
   const lines=cart.map(line=>({productId:line.productId,name:line.name,code:line.code,qty:num(line.qty),unit:line.unit,factor:num(line.factor),baseUnit:line.baseUnit,stockQty:num(line.qty)*num(line.factor),unitPrice:cents(line.unitPrice),cost:cents(line.cost),lineTotal:cents(line.qty*line.unitPrice)}));
   const paidAmount=type==='cash'?total:received;
-  const stockChanges=[...required].map(([productId,needed])=>{const product=productMap.get(productId);const stockBefore=num(product.stock);const stockAfter=roundQty(Math.max(0,stockBefore-needed));return {productId,productName:product.name,stockUnit:product.unit,stockBefore,stockAfter,soldOut:stockBefore>0&&stockAfter===0};});  const sale={receiptNo:`SL-${localDateKey(new Date()).replaceAll('-','')}-${String(Date.now()).slice(-5)}`,date:now,type,customerId,customerName:customerId?(await getOne('customers',customerId)).name:'Walk-in',lines,total,paidAmount,balanceDue:cents(total-paidAmount),cashReceived:type==='cash'?received:null,change:type==='cash'?cents(Math.max(0,received-total)):0,stockChanges};
+  const stockChanges=[...required].map(([productId,needed])=>{const product=productMap.get(productId);const stockBefore=num(product.stock);const stockAfter=roundQty(Math.max(0,stockBefore-needed));return {productId,productName:product.name,stockUnit:product.unit,stockBefore,stockAfter,soldOut:stockBefore>0&&stockAfter===0};});
+  const customer=customerId?await getOne('customers',customerId):null;
+  const sale={receiptNo:`SL-${localDateKey(new Date()).replaceAll('-','')}-${Date.now()}-${crypto.randomUUID().slice(0,8)}`,date:now,type,customerId,customerName:customer?.name||'Walk-in',lines,subtotal:total,total,paidAmount,balanceDue:cents(total-paidAmount),cashReceived:type==='cash'?received:null,change:type==='cash'?cents(Math.max(0,received-total)):0,stockChanges};
   try {
     const tx=db.transaction(['products','sales'],'readwrite');
     const done=transactionDone(tx);
@@ -328,7 +336,9 @@ async function completeSale(event) {
   } catch(err) { console.error(err); return showToast('Sale was not saved. Please try again.'); }
   cart=[]; $('sale-barcode').value=''; $('sale-paid').value='0'; $('sale-type').value='cash'; $('sale-customer').value='';
   await updateSelects(); renderCart(); await renderDashboard(); await renderProducts(); await renderCustomers();
-  showToast(`Sale completed: ${sale.receiptNo}. Use Sales History to print the receipt.`);
+  try { const png=await createSaleReceiptPng(sale); downloadFile(`${sale.receiptNo}-receipt.png`,png,'image/png'); showToast(`Sale ${sale.receiptNo} saved. Receipt PNG downloaded.`); }
+  catch(err) { console.error('Receipt PNG generation failed:',err); showToast(`Sale ${sale.receiptNo} saved, but its receipt image could not be generated. Use Sales History to retry.`); }
+  } finally { saleSubmissionInProgress = false; submitButton.disabled = false; }
 }
 
 async function customerBalances(customersArg=null,salesArg=null) {
@@ -416,7 +426,7 @@ function isAndroidInstalledApp() {
 }async function renderHistory() {
   const [sales,customers]=await Promise.all([getAll('sales'),getAll('customers')]);const customerMap=new Map(customers.map(c=>[c.id,c]));
   const shown=filteredHistorySales(sales);
-  $('sales-table').innerHTML=shown.length?`<table><thead><tr><th>Receipt / Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Paid</th><th>Balance due</th><th>Type</th><th>Receipt</th></tr></thead><tbody>${shown.map(s=>`<tr><td><b>${esc(s.receiptNo)}</b><div class="muted">${esc(dateText(s.date))}</div></td><td>${esc(customerMap.get(s.customerId)?.name||s.customerName||'Walk-in')}</td><td>${(s.lines||[]).reduce((n,l)=>n+num(l.qty),0).toLocaleString('en-PH',{maximumFractionDigits:3})} qty<div class="muted">${esc((s.lines||[]).map(l=>l.name).join(', '))}</div></td><td><b>${money(s.total)}</b></td><td>${money(s.paidAmount)}</td><td>${num(s.balanceDue)>0?`<span class="pill low">${money(s.balanceDue)}</span>`:money(0)}</td><td><span class="pill ${s.type==='credit'?'low':'good'}">${s.type==='credit'?'Credit':'Cash'}</span></td><td><div class="actions">${isAndroidInstalledApp()?`<button class="btn small" data-action="image-sale" data-id="${s.id}">Image</button>`:`<button class="btn small" data-action="print-sale" data-id="${s.id}">Print</button>`}</div></td></tr>`).join('')}</tbody></table>`:emptyState('No sales found','Completed transactions will appear here.');
+  $('sales-table').innerHTML=shown.length?`<table><thead><tr><th>Receipt / Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Paid</th><th>Balance due</th><th>Type</th><th>Receipt</th></tr></thead><tbody>${shown.map(s=>`<tr><td><b>${esc(s.receiptNo)}</b><div class="muted">${esc(dateText(s.date))}</div></td><td>${esc(customerMap.get(s.customerId)?.name||s.customerName||'Walk-in')}</td><td>${(s.lines||[]).reduce((n,l)=>n+num(l.qty),0).toLocaleString('en-PH',{maximumFractionDigits:3})} qty<div class="muted">${esc((s.lines||[]).map(l=>l.name).join(', '))}</div></td><td><b>${money(s.total)}</b></td><td>${money(s.paidAmount)}</td><td>${num(s.balanceDue)>0?`<span class="pill low">${money(s.balanceDue)}</span>`:money(0)}</td><td><span class="pill ${s.type==='credit'?'low':'good'}">${s.type==='credit'?'Credit':'Cash'}</span></td><td><div class="actions"><button class="btn small" data-action="image-sale" data-id="${s.id}">Image</button><button class="btn small" data-action="share-sale" data-id="${s.id}">Share</button><button class="btn small" data-action="print-sale" data-id="${s.id}">Print</button></div></td></tr>`).join('')}</tbody></table>`:emptyState('No sales found','Completed transactions will appear here.');
 }
 async function printReceipt(sale) {
   if(!sale)return;const customer=sale.customerName||'Walk-in';const balances=sale.customerId?await customerBalances():[];const account=balances.find(c=>c.id===sale.customerId);
@@ -425,13 +435,31 @@ async function printReceipt(sale) {
   const html=`<!doctype html><html><head><meta charset="utf-8"><title>Receipt ${esc(sale.receiptNo)}</title><style>@page{size:57mm auto;margin:0}*{box-sizing:border-box}body{font:9px Arial;color:#111;margin:0;width:57mm}.receipt{width:57mm;min-height:40mm;padding:3mm}h2,p{text-align:center;margin:2px 0}h2{font-size:12px}table{width:100%;border-collapse:collapse;margin-top:5px}td{padding:3px 0;border-bottom:1px dashed #aaa;vertical-align:top}.amount{text-align:right;white-space:nowrap}.row{display:flex;justify-content:space-between;gap:3px;padding:2px 0}.strong{font-weight:bold}.rule{border-top:1px dashed #555;margin:4px 0}.foot{text-align:center;margin-top:5px;font-size:8px}</style></head><body><div class="receipt"><h2>${esc(getStoreName())}</h2><p>SALES RECEIPT</p><p>${esc(sale.receiptNo)} · ${esc(dateText(sale.date))}</p><p>Customer: ${esc(customer)}</p><table>${rows}</table><div class="row strong"><span>Total</span><span>${money(sale.total)}</span></div><div class="row"><span>Paid on sale</span><span>${money(sale.paidAmount)}</span></div><div class="row"><span>Unpaid on sale</span><span>${money(sale.balanceDue)}</span></div>${sale.type==='cash'?`<div class="row"><span>Cash received</span><span>${money(sale.cashReceived)}</span></div><div class="row"><span>Change</span><span>${money(sale.change)}</span></div>`:''}<div class="row strong"><span>Payment</span><span>${esc(sale.type.toUpperCase())}</span></div>${acct}<p class="foot">Thank you!</p></div><script>window.onload=()=>window.print()<\/script></body></html>`;
   const w=window.open('','_blank','width=360,height=640');if(!w){showToast('Your browser blocked the receipt window. Allow pop-ups and try again.');return;}w.document.open();w.document.write(html);w.document.close();
 }
+async function createSaleReceiptPng(sale) {
+  if(!sale) throw new Error('Sale not found.');
+  const width=560, imageHeight=Math.max(430,330+(sale.lines||[]).length*58);
+  const rows=(sale.lines||[]).map(l=>'<div class="line"><span>'+esc(l.name)+'<br/><small>'+esc(formatQty(l.qty))+' '+esc(l.unit)+' × '+money(l.unitPrice)+'</small></span><b>'+money(l.lineTotal??l.qty*l.unitPrice)+'</b></div>').join('');
+  const payment=sale.type==='cash'?'<div class="line"><span>Payment received</span><span>'+money(sale.cashReceived??sale.paidAmount)+'</span></div><div class="line"><span>Change</span><span>'+money(sale.change)+'</span></div>':'<div class="line"><span>Payment received</span><span>'+money(sale.paidAmount)+'</span></div><div class="line"><span>Change</span><span>'+money(sale.change)+'</span></div>';
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+imageHeight+'"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font:20px Arial}.receipt{width:'+width+'px;min-height:'+imageHeight+'px;padding:28px;overflow-wrap:anywhere}h2,p{text-align:center;margin:7px 0}h2{font-size:29px}.line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed #aaa}small{font-size:17px}hr{border:0;border-top:1px dashed #555;margin:13px 0}.bold{font-weight:bold}.foot{text-align:center}</style><div class="receipt"><h2>'+esc(getStoreName())+'</h2><p>SALES RECEIPT</p><p>'+esc(sale.receiptNo)+' · '+esc(dateText(sale.date))+'</p>'+rows+'<hr/><div class="line"><span>Subtotal</span><span>'+money(sale.subtotal??sale.total)+'</span></div><div class="line bold"><span>Total</span><span>'+money(sale.total)+'</span></div>'+payment+'<p class="foot">Thank you!</p></div></div></foreignObject></svg>';
+  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
+  try { const img=await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('Could not render receipt image.'));image.src=url;});
+    const canvas=document.createElement('canvas');canvas.width=width;canvas.height=imageHeight;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas is unavailable.');ctx.drawImage(img,0,0,width,imageHeight);
+    return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not encode PNG.')),'image/png'));
+  } finally { URL.revokeObjectURL(url); }
+}
 async function exportSaleReceiptImage(sale) {
-  if(!isAndroidInstalledApp())return showToast('Receipt image export is available in the installed Android app.');
-  if(!sale)return;const balances=sale.customerId?await customerBalances():[];const account=balances.find(c=>c.id===sale.customerId);const customer=esc(sale.customerName||'Walk-in');const rows=(sale.lines||[]).map(l=>`<div class="line"><span>${esc(l.name)}<br/><small>${esc(formatQty(l.qty))} ${esc(l.unit)} × ${money(l.unitPrice)}</small></span><b>${money(l.lineTotal??l.qty*l.unitPrice)}</b></div>`).join('');const acct=account?`<hr/><div class="line"><span>Unpaid sales</span><span>${money(account.unpaidSales)}</span></div><div class="line"><span>Old balance remaining</span><span>${money(account.openingBalanceRemaining)}</span></div><div class="line bold"><span>Existing balance</span><span>${money(account.balance)}</span></div>`:'';
-  const imageHeight=Math.max(302,220+(sale.lines||[]).length*54+(account?100:0));
-  const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="430" height="${imageHeight}"><foreignObject width="430" height="${imageHeight}"><div xmlns="http://www.w3.org/1999/xhtml"><style>*{box-sizing:border-box}body{margin:0;color:#111;font:18px Arial}.receipt{width:430px;min-height:302px;padding:22px;overflow-wrap:anywhere}h2,p{text-align:center;margin:6px 0}h2{font-size:24px}.line{display:flex;justify-content:space-between;gap:10px;padding:6px 0;border-bottom:1px dashed #aaa}small{font-size:16px}hr{border:0;border-top:1px dashed #555;margin:10px 0}.bold{font-weight:bold}</style><div class="receipt"><h2>${esc(getStoreName())}</h2><p>SALES RECEIPT</p><p>${esc(sale.receiptNo)} · ${esc(dateText(sale.date))}</p><p>Customer: ${customer}</p>${rows}<hr/><div class="line bold"><span>Total</span><span>${money(sale.total)}</span></div><div class="line"><span>Paid on sale</span><span>${money(sale.paidAmount)}</span></div><div class="line"><span>Unpaid on sale</span><span>${money(sale.balanceDue)}</span></div><div class="line bold"><span>Payment</span><span>${esc(sale.type.toUpperCase())}</span></div>${acct}<p>Thank you!</p></div></div></foreignObject></svg>`;
-  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));const img=new Image();img.onload=()=>{try{const canvas=document.createElement('canvas');canvas.width=430;canvas.height=img.height;canvas.getContext('2d').drawImage(img,0,0,canvas.width,canvas.height);canvas.toBlob(blob=>{if(blob){downloadFile(`${sale.receiptNo}-receipt-57x40mm.png`,blob,'image/png');showToast('Receipt image saved at 57 mm wide (40 mm minimum height).');}else showToast('Could not create receipt image.');},'image/png');}catch(err){console.error(err);showToast('Could not create receipt image.');}finally{URL.revokeObjectURL(url);}};img.onerror=()=>{URL.revokeObjectURL(url);showToast('Could not create receipt image in this browser.');};img.src=url;
-}function csvCell(value) { const s=String(value ?? ''); return `"${s.replace(/"/g,'""')}"`; }
+  try { const blob=await createSaleReceiptPng(sale);downloadFile(sale.receiptNo+'-receipt.png',blob,'image/png');showToast('Receipt PNG downloaded.'); }
+  catch(err) { console.error(err);showToast('Could not create receipt image in this browser.'); }
+}
+async function shareSaleReceiptImage(sale) {
+  if(!sale)return;
+  try {
+    const blob=await createSaleReceiptPng(sale);const file=new File([blob],sale.receiptNo+'-receipt.png',{type:'image/png'});
+    if(navigator.canShare?.({files:[file]})&&navigator.share){await navigator.share({files:[file],title:'Receipt '+sale.receiptNo});}
+    else {downloadFile(file.name,blob,'image/png');showToast('Image sharing is unavailable here. Receipt PNG downloaded so you can share it.');}
+  } catch(err) { if(err?.name!=='AbortError'){console.error(err);showToast('Could not share receipt image.');} }
+}
+function csvCell(value) { const s=String(value ?? ''); return `"${s.replace(/"/g,'""')}"`; }
 function downloadFile(name, content, type='text/plain;charset=utf-8') {
   const blob=new Blob([content],{type});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
 }
@@ -643,7 +671,7 @@ document.addEventListener('click', async event => {
     if(kind==='edit-customer')await editCustomer(id);
     if(kind==='pay-customer'){$('payment-customer').value=String(id);$('payment-amount').focus();$('payment-form').scrollIntoView({behavior:'smooth',block:'center'});}
     if(kind==='customer-history'){await renderCustomerRecordHistory(Number(id));$('customer-record-history').scrollIntoView({behavior:'smooth',block:'center'});}
-    if(kind==='print-sale'){const sale=await getOne('sales',id);await printReceipt(sale);} if(kind==='image-sale'){const sale=await getOne('sales',id);await exportSaleReceiptImage(sale);}
+    if(kind==='print-sale'){const sale=await getOne('sales',id);await printReceipt(sale);} if(kind==='image-sale'){const sale=await getOne('sales',id);await exportSaleReceiptImage(sale);} if(kind==='share-sale'){const sale=await getOne('sales',id);await shareSaleReceiptImage(sale);}
   }
 });
 $('product-form').addEventListener('submit',saveProduct);
