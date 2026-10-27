@@ -121,6 +121,7 @@ function navigate(page) {
     return;
   }
   activePage = page;
+  document.body.classList.remove('home-launcher');
   document.body.classList.toggle('home-screen', page === 'dashboard');
   document.querySelectorAll('.nav-btn[data-page]').forEach(btn => {
     const isActive = btn.dataset.page === page;

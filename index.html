@@ -102,26 +102,26 @@
       header{flex:0 0 auto;width:100%;margin:0 -14px 8px;padding:calc(10px + env(safe-area-inset-top)) 14px 9px}
       .layout{display:flex;flex:1;min-height:calc(100svh - 66px);flex-direction:column;gap:4px}
       .sidebar{position:static;inset:auto;width:100%;max-width:none;flex:1;margin:0;padding:18px 4px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,minmax(96px,1fr));align-content:center;align-items:center;justify-items:center;gap:clamp(10px,4vw,20px);overflow:visible;border:0;border-radius:0;background:transparent;box-shadow:none}
-      .sidebar .nav-btn{position:relative;width:clamp(88px,25vw,112px);height:clamp(108px,31vw,132px);min-width:0;min-height:0;flex:none;margin:0;padding:10px 6px;border:1px solid #e3eae5;border-radius:25px;background:#fff;box-shadow:0 8px 24px rgba(19,57,42,.09);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px}
-      .sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:clamp(54px,16vw,68px);height:clamp(54px,16vw,68px);flex:none}
+      .sidebar .nav-btn{position:relative;width:clamp(96px,28vw,120px);height:auto;aspect-ratio:5/4;min-width:0;min-height:0;flex:none;margin:0;padding:6px;border:1px solid #e3eae5;border-radius:22px;background:#fff;box-shadow:0 8px 24px rgba(19,57,42,.09);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+      .sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:clamp(42px,14vw,56px);height:clamp(42px,14vw,56px);flex:none}
       .sidebar .nav-btn .nav-label{position:static;width:auto;height:auto;padding:0;margin:0;overflow:visible;clip-path:none;white-space:normal;border:0;font-size:11px;line-height:1.15;font-weight:700;text-align:center;color:#35453d}
       .sidebar .nav-btn.active{border:2px solid #2b845f;background:#f3faf6;box-shadow:0 10px 28px rgba(18,92,69,.18)}
       .sidebar-foot{display:none}
       body.home-screen #app-view{display:block}
-      body.home-screen .view[data-view="dashboard"]>*{display:none!important}
-      body.home-screen .layout{display:flex;flex:1;min-height:calc(100svh - 66px);flex-direction:column;gap:4px}
-      body.home-screen .sidebar{flex:1;padding:18px 4px;grid-template-rows:repeat(2,minmax(96px,1fr));gap:clamp(10px,4vw,20px)}
-      body:not(.home-screen) .layout{min-height:auto}
-      body:not(.home-screen) .sidebar{position:sticky;top:calc(55px + env(safe-area-inset-top));z-index:14;flex:0 0 auto;margin:0 auto 12px;padding:5px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:auto;gap:3px;border:1px solid #e2e9e4;border-radius:15px;background:rgba(255,255,255,.97);box-shadow:0 4px 15px rgba(17,63,45,.09)}
-      body:not(.home-screen) .sidebar .nav-btn{width:100%;height:43px;min-height:43px;padding:4px;border:0;border-radius:11px;box-shadow:none;background:transparent}
-      body:not(.home-screen) .sidebar .nav-btn .ico,body:not(.home-screen) .sidebar .nav-btn:nth-child(n) .ico{width:29px;height:29px;flex-basis:29px}
-      body:not(.home-screen) .sidebar .nav-btn .nav-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
-      body:not(.home-screen) .sidebar .nav-btn.active{background:#e7f2ec;box-shadow:inset 0 0 0 1px #d3e8db}
+      body.home-launcher .view[data-view="dashboard"]>*{display:none!important}
+      body.home-launcher .layout{display:flex;flex:1;min-height:calc(100svh - 66px);flex-direction:column;gap:4px}
+      body.home-launcher .sidebar{flex:1;padding:18px 4px;grid-template-rows:repeat(2,minmax(96px,1fr));gap:clamp(10px,4vw,20px)}
+      body:not(.home-launcher) .layout{min-height:auto}
+      body:not(.home-launcher) .sidebar{position:sticky;top:calc(55px + env(safe-area-inset-top));z-index:14;flex:0 0 auto;margin:0 auto 12px;padding:5px;display:grid;grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:auto;gap:3px;border:1px solid #e2e9e4;border-radius:15px;background:rgba(255,255,255,.97);box-shadow:0 4px 15px rgba(17,63,45,.09)}
+      body:not(.home-launcher) .sidebar .nav-btn{width:100%;height:43px;min-height:43px;padding:4px;border:0;border-radius:11px;box-shadow:none;background:transparent}
+      body:not(.home-launcher) .sidebar .nav-btn .ico,body:not(.home-launcher) .sidebar .nav-btn:nth-child(n) .ico{width:29px;height:29px;flex-basis:29px}
+      body:not(.home-launcher) .sidebar .nav-btn .nav-label{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip-path:inset(50%);white-space:nowrap;border:0}
+      body:not(.home-launcher) .sidebar .nav-btn.active{background:#e7f2ec;box-shadow:inset 0 0 0 1px #d3e8db}
     }
-    @media(max-width:370px){.sidebar .nav-btn{width:84px;height:104px}.sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:52px;height:52px}.sidebar .nav-btn .nav-label{font-size:10px}.sidebar{grid-template-rows:repeat(2,minmax(108px,1fr))}}
+    @media(max-width:370px){.sidebar .nav-btn{width:clamp(96px,28vw,104px);height:auto;aspect-ratio:5/4}.sidebar .nav-btn .ico,.sidebar .nav-btn:nth-child(n) .ico{width:clamp(40px,13vw,48px);height:clamp(40px,13vw,48px)}.sidebar .nav-btn .nav-label{font-size:9px}.sidebar{grid-template-rows:repeat(2,auto)}}
   </style>
 </head>
-<body class="home-screen">
+<body class="home-screen home-launcher">
 <div class="shell">
   <header>
     <div class="brand"><div class="brand-mark"><img src="logo-header.png" id="store-logo" alt="StoreLedger logo"></div><div><h1 id="store-name">StoreLedger</h1><p>Inventory · Sales · Customer Credit</p></div></div>
