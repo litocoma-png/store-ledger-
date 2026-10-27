@@ -326,7 +326,7 @@ async function completeSale(event) {
   const paidAmount=type==='cash'?total:received;
   const stockChanges=[...required].map(([productId,needed])=>{const product=productMap.get(productId);const stockBefore=num(product.stock);const stockAfter=roundQty(Math.max(0,stockBefore-needed));return {productId,productName:product.name,stockUnit:product.unit,stockBefore,stockAfter,soldOut:stockBefore>0&&stockAfter===0};});
   const customer=customerId?await getOne('customers',customerId):null;
-  const sale={receiptNo:`SL-${localDateKey(new Date()).replaceAll('-','')}-${Date.now()}-${crypto.randomUUID().slice(0,8)}`,date:now,type,customerId,customerName:customer?.name||'Walk-in',lines,subtotal:total,total,paidAmount,balanceDue:cents(total-paidAmount),cashReceived:type==='cash'?received:null,change:type==='cash'?cents(Math.max(0,received-total)):0,stockChanges};
+  const sale={receiptNo:`SL-${localDateKey(new Date()).replaceAll('-','')}-${Date.now()}-${Math.random().toString(36).slice(2,10)}`,date:now,type,customerId,customerName:customer?.name||'Walk-in',lines,subtotal:total,total,paidAmount,balanceDue:cents(total-paidAmount),cashReceived:type==='cash'?received:null,change:type==='cash'?cents(Math.max(0,received-total)):0,stockChanges};
   try {
     const tx=db.transaction(['products','sales'],'readwrite');
     const done=transactionDone(tx);
@@ -334,10 +334,10 @@ async function completeSale(event) {
     tx.objectStore('sales').add(sale);
     await done;
   } catch(err) { console.error(err); return showToast('Sale was not saved. Please try again.'); }
-  cart=[]; $('sale-barcode').value=''; $('sale-paid').value='0'; $('sale-type').value='cash'; $('sale-customer').value='';
-  await updateSelects(); renderCart(); await renderDashboard(); await renderProducts(); await renderCustomers();
   try { const png=await createSaleReceiptPng(sale); downloadFile(`${sale.receiptNo}-receipt.png`,png,'image/png'); showToast(`Sale ${sale.receiptNo} saved. Receipt PNG downloaded.`); }
   catch(err) { console.error('Receipt PNG generation failed:',err); showToast(`Sale ${sale.receiptNo} saved, but its receipt image could not be generated. Use Sales History to retry.`); }
+  cart=[]; $('sale-barcode').value=''; $('sale-paid').value='0'; $('sale-type').value='cash'; $('sale-customer').value='';
+  await updateSelects(); renderCart(); await renderDashboard(); await renderProducts(); await renderCustomers();
   } finally { saleSubmissionInProgress = false; submitButton.disabled = false; }
 }
 
@@ -437,15 +437,20 @@ async function printReceipt(sale) {
 }
 async function createSaleReceiptPng(sale) {
   if(!sale) throw new Error('Sale not found.');
-  const width=560, imageHeight=Math.max(430,330+(sale.lines||[]).length*58);
-  const rows=(sale.lines||[]).map(l=>'<div class="line"><span>'+esc(l.name)+'<br/><small>'+esc(formatQty(l.qty))+' '+esc(l.unit)+' × '+money(l.unitPrice)+'</small></span><b>'+money(l.lineTotal??l.qty*l.unitPrice)+'</b></div>').join('');
-  const payment=sale.type==='cash'?'<div class="line"><span>Payment received</span><span>'+money(sale.cashReceived??sale.paidAmount)+'</span></div><div class="line"><span>Change</span><span>'+money(sale.change)+'</span></div>':'<div class="line"><span>Payment received</span><span>'+money(sale.paidAmount)+'</span></div><div class="line"><span>Change</span><span>'+money(sale.change)+'</span></div>';
-  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+imageHeight+'"><foreignObject width="100%" height="100%"><div xmlns="http://www.w3.org/1999/xhtml"><style>*{box-sizing:border-box}body{margin:0;background:#fff;color:#111;font:20px Arial}.receipt{width:'+width+'px;min-height:'+imageHeight+'px;padding:28px;overflow-wrap:anywhere}h2,p{text-align:center;margin:7px 0}h2{font-size:29px}.line{display:flex;justify-content:space-between;gap:12px;padding:9px 0;border-bottom:1px dashed #aaa}small{font-size:17px}hr{border:0;border-top:1px dashed #555;margin:13px 0}.bold{font-weight:bold}.foot{text-align:center}</style><div class="receipt"><h2>'+esc(getStoreName())+'</h2><p>SALES RECEIPT</p><p>'+esc(sale.receiptNo)+' · '+esc(dateText(sale.date))+'</p>'+rows+'<hr/><div class="line"><span>Subtotal</span><span>'+money(sale.subtotal??sale.total)+'</span></div><div class="line bold"><span>Total</span><span>'+money(sale.total)+'</span></div>'+payment+'<p class="foot">Thank you!</p></div></div></foreignObject></svg>';
+  const width=560, pad=30, textLines=[]; let y=42;
+  const addText=(text,x,baseline,size=20,weight='normal',anchor='start')=>{textLines.push('<text x="'+x+'" y="'+baseline+'" font-family="Arial,sans-serif" font-size="'+size+'" font-weight="'+weight+'" text-anchor="'+anchor+'" fill="#17231c">'+esc(text)+'</text>');};
+  const wrap=(value,max=42)=>{const words=String(value||'').split(/\s+/);const lines=[];let line='';for(const word of words){if(line&&line.length+word.length+1>max){lines.push(line);line=word;}else line+=(line?' ':'')+word;}if(line)lines.push(line);return lines.length?lines:[''];};
+  for(const name of wrap(getStoreName(),32)){addText(name,width/2,y,26,'bold','middle');y+=32;}
+  addText('SALES RECEIPT',width/2,y,18,'bold','middle');y+=30;addText(sale.receiptNo,pad,y,16,'bold');addText(dateText(sale.date),width-pad,y,15,'normal','end');y+=30;
+  textLines.push('<path d="M'+pad+' '+y+' H'+(width-pad)+'" stroke="#9aa69d" stroke-dasharray="5 5"/>');y+=20;
+  for(const line of sale.lines||[]){const names=wrap(line.name,38);for(const name of names){addText(name,pad,y,18,'bold');y+=23;}addText(formatQty(line.qty)+' '+line.unit+' × '+money(line.unitPrice),pad+10,y,15);addText(money(line.lineTotal??line.qty*line.unitPrice),width-pad,y-23,17,'bold','end');y+=26;textLines.push('<path d="M'+pad+' '+y+' H'+(width-pad)+'" stroke="#d3d9d5" stroke-dasharray="4 5"/>');y+=18;}
+  const amount=(label,value,bold=false)=>{addText(label,pad,y,18,bold?'bold':'normal');addText(money(value),width-pad,y,18,bold?'bold':'normal','end');y+=31;};
+  amount('Subtotal',sale.subtotal??sale.total);amount('Total',sale.total,true);amount('Payment received',sale.type==='cash'?(sale.cashReceived??sale.paidAmount):sale.paidAmount);amount('Change',sale.change);
+  y+=5;addText('Thank you!',width/2,y,17,'normal','middle');y+=28;const imageHeight=y+pad;
+  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+imageHeight+'" viewBox="0 0 '+width+' '+imageHeight+'"><rect width="100%" height="100%" fill="#fff"/><g>'+textLines.join('')+'</g></svg>';
   const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
-  try { const img=await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('Could not render receipt image.'));image.src=url;});
-    const canvas=document.createElement('canvas');canvas.width=width;canvas.height=imageHeight;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas is unavailable.');ctx.drawImage(img,0,0,width,imageHeight);
-    return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not encode PNG.')),'image/png'));
-  } finally { URL.revokeObjectURL(url); }
+  try {const img=await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('Could not render receipt image.'));image.src=url;});const canvas=document.createElement('canvas');canvas.width=width;canvas.height=imageHeight;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas is unavailable.');ctx.drawImage(img,0,0,width,imageHeight);return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not encode PNG.')),'image/png'));}
+  finally {URL.revokeObjectURL(url);}
 }
 async function exportSaleReceiptImage(sale) {
   try { const blob=await createSaleReceiptPng(sale);downloadFile(sale.receiptNo+'-receipt.png',blob,'image/png');showToast('Receipt PNG downloaded.'); }
