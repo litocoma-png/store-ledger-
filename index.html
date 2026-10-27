@@ -23,6 +23,27 @@
     @media(max-width:560px){.shell{padding:12px}.brand-mark{width:40px;height:40px}.brand h1{font-size:19px}.brand p{font-size:11px}.status{font-size:10px;padding:6px 8px}.page-head h2{font-size:22px}.page-head{align-items:flex-start}.page-head .actions{max-width:48%;justify-content:flex-end}.btn{padding:9px 10px}.panel{padding:14px}.stat{padding:13px}.stat-value{font-size:20px}.form-grid{grid-template-columns:1fr}.field.full{grid-column:auto}.report-grid,.backup-grid{grid-template-columns:1fr}.cart-line{grid-template-columns:minmax(0,1fr) 62px 75px 24px;gap:5px}.cart-line input{padding:6px 4px}.table-wrap table{font-size:12px}th,td{padding:9px}.nav-btn{font-size:12px}.nav-btn .ico{display:none}}
     @media print{body{background:#fff}.shell,header,.sidebar,.page-head,.no-print{display:none!important}.print-area{display:block!important}}
   </style>
+  <style>
+    @media(max-width:700px){
+      :root{--paper:#f3f6f4;--brand:#125c45;--radius:18px}
+      body{font-size:16px;background:#f3f6f4;padding-bottom:calc(76px + env(safe-area-inset-bottom))}
+      .shell{padding:0 14px 22px;max-width:560px}
+      header{position:sticky;top:0;z-index:15;margin:0 -14px 14px;padding:calc(9px + env(safe-area-inset-top)) 14px 10px;background:rgba(243,246,244,.96);backdrop-filter:blur(16px);border-bottom:1px solid #e5ebe7}
+      .brand{gap:9px}.brand-mark{width:36px;height:36px;border-radius:11px}.brand h1{font-size:17px}.brand p{font-size:10px}.status{font-size:9px;padding:5px 7px}
+      .layout{display:block}.sidebar{position:fixed;z-index:30;left:0;right:0;bottom:0;top:auto;display:flex;justify-content:space-around;gap:2px;padding:7px 5px calc(7px + env(safe-area-inset-bottom));border:0;border-top:1px solid #e2e9e4;border-radius:18px 18px 0 0;background:rgba(255,255,255,.97);box-shadow:0 -8px 28px #173d2b12;overflow-x:auto;scrollbar-width:none}.sidebar::-webkit-scrollbar{display:none}
+      .nav-btn{flex:1 0 auto;min-width:52px;width:auto;min-height:50px;padding:5px 7px;margin:0;border-radius:12px;display:flex;flex-direction:column;justify-content:center;gap:1px;text-align:center;font-size:9px;line-height:1.2}.nav-btn .ico{display:block;width:auto;font-size:17px;line-height:1.1}.nav-btn.active{background:#e5f3ec;color:#125c45}
+      .sidebar-foot{display:none}.page-head{margin:12px 0 14px;align-items:center}.page-head h2{font-size:23px}.page-head p{font-size:12px}.page-head .actions{max-width:none}
+      .view[data-view="sale"] .page-head{margin-top:9px}.sale-layout{display:flex;flex-direction:column;gap:11px}.sale-layout>.panel:first-child{order:0}.sale-layout>.panel:last-child{order:1}
+      .panel{padding:15px;border-radius:18px;margin-bottom:11px;box-shadow:0 4px 18px #153c2b0a;border-color:#e7ece8}.panel-head{margin-bottom:12px}.panel h3{font-size:15px}.sub{font-size:11px}
+      .view[data-view="sale"] .form-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.view[data-view="sale"] .field.full{grid-column:1/-1}.field label{font-size:12px}.field input,.field select,.toolbar input,.toolbar select{min-height:48px;border-radius:12px;font-size:16px;padding:11px 12px}.view[data-view="sale"] #sale-barcode{min-width:0}.view[data-view="sale"] [data-scan="sale"]{min-width:58px;min-height:48px}
+      #add-cart-item{min-height:50px;border-radius:13px;font-size:15px}.view[data-view="sale"] .footnote{line-height:1.4}
+      .cart-line{grid-template-columns:minmax(0,1fr) 67px 78px 28px;gap:6px;padding:11px 0}.cart-line input{min-height:43px;border-radius:10px;text-align:center;font-size:15px}.cart-name{font-size:14px}.cart-remove{min-height:40px;font-size:22px}
+      .cart-total{padding:14px 0}.big-total{font-size:29px}.view[data-view="sale"] #checkout-form{padding-top:3px}.view[data-view="sale"] #checkout-form .form-grid{gap:9px}.view[data-view="sale"] #sale-add-customer{min-height:36px}.view[data-view="sale"] #checkout-form>button[type="submit"]{position:sticky;bottom:calc(78px + env(safe-area-inset-bottom));z-index:4;min-height:54px;border-radius:15px;font-size:16px;box-shadow:0 8px 22px #125c4533}
+      .stats{gap:9px}.stat{border-radius:15px;padding:12px}.stat-value{font-size:19px}.table-wrap{border-radius:12px}.toolbar .grow{min-width:100%}.form-actions{justify-content:stretch}.form-actions .btn{flex:1;min-height:44px}
+      .modal-backdrop{padding:12px}.modal{border-radius:20px;padding:17px}.toast{bottom:calc(82px + env(safe-area-inset-bottom))}
+    }
+    @media(max-width:370px){.shell{padding-left:10px;padding-right:10px}.sidebar{padding-left:2px;padding-right:2px}.nav-btn{min-width:48px;padding-left:4px;padding-right:4px;font-size:8px}.cart-line{grid-template-columns:minmax(0,1fr) 56px 68px 24px}.view[data-view="sale"] .form-grid{gap:7px}}
+  </style>
 </head>
 <body>
 <div class="shell">
