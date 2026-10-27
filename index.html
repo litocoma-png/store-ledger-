@@ -129,7 +129,15 @@
     }
   </style>
   <style id="mobile-two-row-icon-navigation">
-    @media(max-width:700px){body:not(.home-launcher) .sidebar{grid-template-columns:repeat(3,minmax(0,1fr));grid-template-rows:repeat(2,auto);row-gap:2px}body:not(.home-launcher) .sidebar .nav-btn{width:100%;height:42px;min-height:42px}}
+    @media(max-width:700px){body:not(.home-launcher) .sidebar{grid-template-columns:repeat(6,minmax(0,1fr));grid-template-rows:auto;row-gap:0}body:not(.home-launcher) .sidebar .nav-btn{width:100%;height:42px;min-height:42px}}
+  </style>
+  <style id="compact-two-row-launcher">
+    @media(max-width:700px){
+      body.home-launcher .sidebar{grid-template-columns:repeat(2,minmax(0,1fr));grid-template-rows:repeat(3,auto);align-content:center;align-items:center;justify-items:center;row-gap:clamp(10px,3vw,16px);padding:12px 4px}
+      body.home-launcher .sidebar .nav-btn{width:clamp(100px,29vw,124px);aspect-ratio:5/4}
+      body.home-launcher .sidebar .nav-btn .ico,body.home-launcher .sidebar .nav-btn:nth-child(n) .ico{width:clamp(52px,16vw,64px);height:clamp(52px,16vw,64px)}
+    }
+    @media(max-width:370px){body.home-launcher .sidebar .nav-btn{width:clamp(94px,28vw,104px)}}
   </style>
 </head>
 <body class="home-screen home-launcher">
