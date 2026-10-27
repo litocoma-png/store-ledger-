@@ -335,7 +335,7 @@ async function completeSale(event) {
     await done;
   } catch(err) { console.error(err); return showToast('Sale was not saved. Please try again.'); }
   try { const png=await createSaleReceiptPng(sale); downloadFile(`${sale.receiptNo}-receipt.png`,png,'image/png'); showToast(`Sale ${sale.receiptNo} saved. Receipt PNG downloaded.`); }
-  catch(err) { console.error('Receipt PNG generation failed:',err); showToast(`Sale ${sale.receiptNo} saved, but its receipt image could not be generated. Use Sales History to retry.`); }
+  catch(err) { console.error('Receipt PNG generation failed:',err); showToast(`Sale ${sale.receiptNo} saved, but the receipt PNG failed: ${err.message||'unsupported browser feature'}`,7000); }
   cart=[]; $('sale-barcode').value=''; $('sale-paid').value='0'; $('sale-type').value='cash'; $('sale-customer').value='';
   await updateSelects(); renderCart(); await renderDashboard(); await renderProducts(); await renderCustomers();
   } finally { saleSubmissionInProgress = false; submitButton.disabled = false; }
@@ -437,24 +437,21 @@ async function printReceipt(sale) {
 }
 async function createSaleReceiptPng(sale) {
   if(!sale) throw new Error('Sale not found.');
-  const width=560, pad=30, textLines=[]; let y=42;
-  const addText=(text,x,baseline,size=20,weight='normal',anchor='start')=>{textLines.push('<text x="'+x+'" y="'+baseline+'" font-family="Arial,sans-serif" font-size="'+size+'" font-weight="'+weight+'" text-anchor="'+anchor+'" fill="#17231c">'+esc(text)+'</text>');};
+  const width=560,pad=30,items=[];let y=42;
+  const addText=(text,x,baseline,size=20,weight='normal',align='left')=>items.push({text:String(text??''),x,baseline,size,weight,align});
   const wrap=(value,max=42)=>{const words=String(value||'').split(/\s+/);const lines=[];let line='';for(const word of words){if(line&&line.length+word.length+1>max){lines.push(line);line=word;}else line+=(line?' ':'')+word;}if(line)lines.push(line);return lines.length?lines:[''];};
-  for(const name of wrap(getStoreName(),32)){addText(name,width/2,y,26,'bold','middle');y+=32;}
-  addText('SALES RECEIPT',width/2,y,18,'bold','middle');y+=30;addText(sale.receiptNo,pad,y,16,'bold');addText(dateText(sale.date),width-pad,y,15,'normal','end');y+=30;
-  textLines.push('<path d="M'+pad+' '+y+' H'+(width-pad)+'" stroke="#9aa69d" stroke-dasharray="5 5"/>');y+=20;
-  for(const line of sale.lines||[]){const names=wrap(line.name,38);for(const name of names){addText(name,pad,y,18,'bold');y+=23;}addText(formatQty(line.qty)+' '+line.unit+' × '+money(line.unitPrice),pad+10,y,15);addText(money(line.lineTotal??line.qty*line.unitPrice),width-pad,y-23,17,'bold','end');y+=26;textLines.push('<path d="M'+pad+' '+y+' H'+(width-pad)+'" stroke="#d3d9d5" stroke-dasharray="4 5"/>');y+=18;}
-  const amount=(label,value,bold=false)=>{addText(label,pad,y,18,bold?'bold':'normal');addText(money(value),width-pad,y,18,bold?'bold':'normal','end');y+=31;};
-  amount('Subtotal',sale.subtotal??sale.total);amount('Total',sale.total,true);amount('Payment received',sale.type==='cash'?(sale.cashReceived??sale.paidAmount):sale.paidAmount);amount('Change',sale.change);
-  y+=5;addText('Thank you!',width/2,y,17,'normal','middle');y+=28;const imageHeight=y+pad;
-  const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+width+'" height="'+imageHeight+'" viewBox="0 0 '+width+' '+imageHeight+'"><rect width="100%" height="100%" fill="#fff"/><g>'+textLines.join('')+'</g></svg>';
-  const url=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));
-  try {const img=await new Promise((resolve,reject)=>{const image=new Image();image.onload=()=>resolve(image);image.onerror=()=>reject(new Error('Could not render receipt image.'));image.src=url;});const canvas=document.createElement('canvas');canvas.width=width;canvas.height=imageHeight;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas is unavailable.');ctx.drawImage(img,0,0,width,imageHeight);return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Could not encode PNG.')),'image/png'));}
-  finally {URL.revokeObjectURL(url);}
+  for(const name of wrap(getStoreName(),32)){addText(name,width/2,y,26,'bold','center');y+=32;}
+  addText('SALES RECEIPT',width/2,y,18,'bold','center');y+=30;addText(sale.receiptNo,pad,y,16,'bold');addText(dateText(sale.date),width-pad,y,15,'normal','right');y+=27;addText('Client: '+(sale.customerName||'Walk-in'),pad,y,16);y+=30;
+  for(const line of sale.lines||[]){const names=wrap(line.name,38);for(const name of names){addText(name,pad,y,18,'bold');y+=23;}addText(formatQty(line.qty)+' '+line.unit+' × '+money(line.unitPrice),pad+10,y,15);addText(money(line.lineTotal??line.qty*line.unitPrice),width-pad,y-23,17,'bold','right');y+=26;y+=18;}
+  const amount=(label,value,bold=false)=>{addText(label,pad,y,18,bold?'bold':'normal');addText(money(value),width-pad,y,18,bold?'bold':'normal','right');y+=31;};
+  amount('Subtotal',sale.subtotal??sale.total);amount('Total',sale.total,true);amount('Payment received',sale.type==='cash'?(sale.cashReceived??sale.paidAmount):sale.paidAmount);amount('Change',sale.change);y+=5;addText('Thank you!',width/2,y,17,'normal','center');
+  const canvas=document.createElement('canvas');canvas.width=width;canvas.height=y+pad;const ctx=canvas.getContext('2d');if(!ctx)throw new Error('Canvas 2D is unavailable.');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.fillStyle='#17231c';ctx.textBaseline='alphabetic';
+  for(const item of items){ctx.font=item.weight+' '+item.size+'px Arial, sans-serif';ctx.textAlign=item.align;ctx.fillText(item.text,item.x,item.baseline,width-pad*2);}
+  return await new Promise((resolve,reject)=>canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Canvas could not encode a PNG.')),'image/png'));
 }
 async function exportSaleReceiptImage(sale) {
   try { const blob=await createSaleReceiptPng(sale);downloadFile(sale.receiptNo+'-receipt.png',blob,'image/png');showToast('Receipt PNG downloaded.'); }
-  catch(err) { console.error(err);showToast('Could not create receipt image in this browser.'); }
+  catch(err) { console.error('Receipt PNG export failed:',err);showToast(`Could not create receipt PNG: ${err.message||'unsupported browser feature'}`,7000); }
 }
 async function shareSaleReceiptImage(sale) {
   if(!sale)return;
@@ -462,7 +459,7 @@ async function shareSaleReceiptImage(sale) {
     const blob=await createSaleReceiptPng(sale);const file=new File([blob],sale.receiptNo+'-receipt.png',{type:'image/png'});
     if(navigator.canShare?.({files:[file]})&&navigator.share){await navigator.share({files:[file],title:'Receipt '+sale.receiptNo});}
     else {downloadFile(file.name,blob,'image/png');showToast('Image sharing is unavailable here. Receipt PNG downloaded so you can share it.');}
-  } catch(err) { if(err?.name!=='AbortError'){console.error(err);showToast('Could not share receipt image.');} }
+  } catch(err) { if(err?.name!=='AbortError'){console.error('Receipt share failed:',err);showToast(`Could not share receipt PNG: ${err.message||'unsupported browser feature'}`,7000);} }
 }
 function csvCell(value) { const s=String(value ?? ''); return `"${s.replace(/"/g,'""')}"`; }
 function downloadFile(name, content, type='text/plain;charset=utf-8') {
