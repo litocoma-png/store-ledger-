@@ -1,5 +1,21 @@
 'use strict';
 
+(function disablePageZoom() {
+  // Keep the app at its designed scale on desktop and touch devices.
+  window.addEventListener('wheel', event => {
+    if (event.ctrlKey) event.preventDefault();
+  }, { passive: false });
+
+  window.addEventListener('keydown', event => {
+    if (!(event.ctrlKey || event.metaKey)) return;
+    if (['+', '=', '-', '_', '0'].includes(event.key)) event.preventDefault();
+  }, true);
+
+  for (const name of ['gesturestart', 'gesturechange', 'gestureend']) {
+    window.addEventListener(name, event => event.preventDefault(), { passive: false });
+  }
+})();
+
 const DB_NAME = 'StoreLedgerOfflineDB';
 const STORE_NAME_KEY = 'StoreLedgerStoreName';
 const DEFAULT_STORE_NAME = 'StoreLedger';
@@ -731,6 +747,22 @@ window.addEventListener('keydown',e=>{if(e.key==='Escape'){stopScanner();$('phot
   } catch(err) {
     console.error(err);
     document.querySelector('main').innerHTML=`<div class="panel"><h2>StoreLedger could not start</h2><p>${esc(err.message)}</p><p>Open the app from localhost or HTTPS, not directly as a file, and use a modern browser.</p></div>`;
+  }
+})();
+
+(function disablePageZoom() {
+  // Keep the app at its designed scale on desktop and touch devices.
+  window.addEventListener('wheel', event => {
+    if (event.ctrlKey) event.preventDefault();
+  }, { passive: false });
+
+  window.addEventListener('keydown', event => {
+    if (!(event.ctrlKey || event.metaKey)) return;
+    if (['+', '=', '-', '_', '0'].includes(event.key)) event.preventDefault();
+  }, true);
+
+  for (const name of ['gesturestart', 'gesturechange', 'gestureend']) {
+    window.addEventListener(name, event => event.preventDefault(), { passive: false });
   }
 })();
 
